@@ -154,7 +154,7 @@ CChatView.prototype.getPosts = function ()
 CChatView.prototype.addPost = function (oPost, bEnd, bRecent)
 {
 	oPost.displayDate = this.getDisplayDate(moment.utc(oPost.date));
-	oPost.displayText = TextUtils.encodeHtml(oPost.text);
+	oPost.displayText = oPost.text;
 
 	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Recent': bRecent});
 	
