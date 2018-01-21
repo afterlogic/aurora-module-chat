@@ -61,7 +61,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 			$aResults = $this->oEavManager->getEntities(
 				$this->getModule()->getNamespace() . '\Classes\Post',
 				array(
-					'UserId', 'Text', 'Date'
+					'UserId', 'Text', 'Date', 'IsHtml'
 				),
 				$Offset,
 				$Limit,
@@ -93,7 +93,8 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 							'userId' => $oItem->UserId,
 							'name' => $aUsers[$oItem->UserId],
 							'text' => $oItem->Text,
-							'date' => $oItem->Date
+							'date' => $oItem->Date,
+							'is_html' => $oItem->IsHtml
 						);
 					}
 				}
@@ -115,7 +116,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	 * @param string $sDate date of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($iUserId, $sText, $sDate)
+	public function CreatePost($iUserId, $sText, $sDate, $IsHtml = false)
 	{
 		$bResult = true;
 		try
@@ -124,6 +125,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 			$oNewPost->UserId = $iUserId;
 			$oNewPost->Text = $sText;
 			$oNewPost->Date = $sDate;
+			$oNewPost->IsHtml = $IsHtml;
 			if (!$this->oEavManager->saveEntity($oNewPost))
 			{
 				throw new \Aurora\System\Exceptions\ManagerException(Errs::UsersManager_UserCreateFailed);
