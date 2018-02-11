@@ -3,19 +3,20 @@ namespace Aurora\Modules\Chat\Classes;
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
-//set_time_limit(0);
+set_time_limit(0);
 class WebSocketChat implements MessageComponentInterface {
     protected $oClients;
 
 	public $oIntegrator;
-	public $oChatDecorator;
+	public $oChatModule;
 
     public function __construct()
 	{
+		$this->log("Process is started.");
 		\Aurora\System\Api::$bUsePing = true;
         $this->oClients = new \SplObjectStorage;
 		$this->oIntegrator = new \Aurora\Modules\Core\Managers\Integrator();
-		$this->oChatDecorator = \Aurora\System\Api::GetModuleDecorator('Chat');
+		$this->oChatModule = \Aurora\System\Api::GetModule('Chat');
     }
 
     public function onOpen(ConnectionInterface $oConn)
@@ -44,13 +45,13 @@ class WebSocketChat implements MessageComponentInterface {
 		{}
 		if ($bResult)
 		{
-			$this->log("New connection. ({$oConn->resourceId})\n");
+			$this->log("New connection. ({$oConn->resourceId})");
 		}
 		else
 		{
 			$oConn->send("User is not authenticated");
 			$oConn->close();
-			$this->log("Connection not established. ({$oConn->resourceId})\n");
+			$this->log("Connection not established. ({$oConn->resourceId})");
 		}
     }
 
@@ -64,9 +65,9 @@ class WebSocketChat implements MessageComponentInterface {
 				$aInfo = $this->getUserInfo($oMessage->token);
 
 				if (isset($aInfo['userId']) && $aInfo['userId'] > 0
-					&& isset($oMessage->msg['Text']) && isset($oMessage->msg['Date']))
+					&& isset($oMessage->msg->Text) && isset($oMessage->msg->Date))
 				{
-					$bResult = $this->oChatDecorator->CreatePost($oMessage->msg['Text'], $oMessage->msg['Date']) | false;
+					$bResult = $this->oChatModule->oApiChatManager->CreatePost($aInfo['userId'], (string) $oMessage->msg->Text, (string) $oMessage->msg->Date);
 					if ($bResult)
 					{
 						foreach ($this->oClients as $oClient)
@@ -74,13 +75,13 @@ class WebSocketChat implements MessageComponentInterface {
 							if ($oFrom !== $oClient)
 							{
 								// The sender is not the receiver, send to each client connected
-								$oClient->send($oMessage->msg);
+								$oClient->send($oMessage->msg->Text);
 							}
 						}
 					}
 					else
 					{
-						$this->log("Error. Can't create post. UserId: {$aInfo['userId']}, Date: {$oMessage->msg['Date']} Text:\r\n{$oMessage->msg['Text']}");
+						$this->log("Error. Can't create post. UserId: {$aInfo['userId']}, Date: {$oMessage->msg->Dated} Text:\r\n{$oMessage->msg->Text}");
 						$oFrom->send("Can't create message");
 					}
 				}
@@ -100,12 +101,12 @@ class WebSocketChat implements MessageComponentInterface {
         // The connection is closed, remove it, as we can no longer send it messages
 		$this->oClients->detach($oConn);
 
-        $this->log("Connection {$oConn->resourceId} has disconnected\n");
+        $this->log("Connection {$oConn->resourceId} has disconnected");
     }
 
     public function onError(ConnectionInterface $oConn, \Exception $e)
 	{
-        $this->log("An error has occurred: {$e->getMessage()}\n");
+        $this->log("An error has occurred: {$e->getMessage()}");
 
         $oConn->close();
     }
@@ -117,7 +118,7 @@ class WebSocketChat implements MessageComponentInterface {
 
 	private function log($sMessage)
 	{
-		echo $sMessage;
+		echo $sMessage . "\n";
 		\Aurora\System\Api::Log($sMessage, \Aurora\System\Enums\LogLevel::Full, 'chat-daemon-');
 	}
 }
