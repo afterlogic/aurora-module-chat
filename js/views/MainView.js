@@ -5,7 +5,7 @@ var
 	$ = require('jquery'),
 	ko = require('knockout'),
 	moment = require('moment'),
-	
+	Screens = require('%PathToCoreWebclientModule%/js/Screens.js'),
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	
@@ -13,7 +13,8 @@ var
 	
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	
-	Ajax = require('modules/%ModuleName%/js/Ajax.js')
+	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
+	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
 
 /**
@@ -23,6 +24,7 @@ var
  */
 function CChatView()
 {
+	var sAuthToken = $.cookie('AuthToken') || '';
 	CAbstractScreenView.call(this, '%ModuleName%');
 	
 	/**
@@ -73,7 +75,20 @@ function CChatView()
 	this.replyTextFocus.subscribe(function () {
 		this.scrollIfNecessary(500);
 	}, this);
-	
+	this.useWebSocket = Settings.useWebSocket();
+	this.bWSConnectionEstablished = ko.observable(false);
+	if (window.WebSocket)
+	{
+		if (sAuthToken !== '')
+		{
+			this.connection = new WebSocket(getWSProtocol() + '://localhost:8080?' + sAuthToken);
+		}
+	}
+	else
+	{
+		this.connection = null;
+		Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_WEBSOCKETS_NOT_SUPPORTED'));
+	}
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
 }
 
@@ -108,6 +123,10 @@ CChatView.prototype.scrollIfNecessary = function (iDelay)
  */
 CChatView.prototype.onShow = function ()
 {
+	if (this.useWebSocket)
+	{
+		this.initWS();
+	}
 	if (this.posts().length === 0)
 	{
 		Ajax.send('GetPostsCount', null, function (oResponse) {
@@ -139,7 +158,10 @@ CChatView.prototype.showMore = function ()
  */
 CChatView.prototype.getPosts = function ()
 {
-	this.clearTimer();
+	if (!this.useWebSocket)
+	{
+		this.clearTimer();
+	}
 	Ajax.send('GetPosts', {Offset: this.offset(), Limit: this.offset() + this.posts().length + 1000}, this.onGetPostsResponse, this);
 };
 
@@ -224,9 +246,12 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 				this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId !== App.getUserId());
 			}
 		}
-		
+
 		this.iLastPostIndex = this.posts().length - 1;
-		this.setTimer();
+		if (!this.useWebSocket)
+		{
+			this.setTimer();
+		}
 	}
 	else if (!this.gettingMore())
 	{
@@ -307,5 +332,39 @@ CChatView.prototype.sendPost = function ()
 	}
 	return false;
 };
+
+CChatView.prototype.initWS = function ()
+{
+	if (this.connection !== null && this.connection.readyState !== 3) //3 - CLOSED
+	{
+		this.connection.onopen = function() {
+			console.log("Connection established.");
+		};
+
+		this.connection.onclose = function(event) {
+			if (event.wasClean)
+			{
+				alert('Соединение закрыто чисто');
+			}
+			else
+			{
+				alert('Обрыв соединения');
+			}
+		};
+
+		this.connection.onmessage = function(event) {
+			console.log(event.data);
+		};
+
+		this.connection.onerror = function(error) {
+			Screens.showError("Error " + error.message);
+		};
+	}
+};
+
+function getWSProtocol()
+{
+	return window.location.protocol === "https:" ? "ws" : "ws"; //TODO use wss for https
+}
 
 module.exports = new CChatView();
