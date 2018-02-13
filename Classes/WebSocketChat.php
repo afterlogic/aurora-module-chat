@@ -13,11 +13,22 @@ class WebSocketChat implements MessageComponentInterface {
     public function __construct()
 	{
 		$this->log("Process is started.");
-		\Aurora\System\Api::$bUsePing = true;
+		\Aurora\System\Db\Pdo\MySql::$bUseReconnect = true;
         $this->oClients = new \SplObjectStorage;
 		$this->oIntegrator = new \Aurora\Modules\Core\Managers\Integrator();
 		$this->oChatModule = \Aurora\System\Api::GetModule('Chat');
-    }
+		
+		//ignore warnings "mysql has gone away"
+		set_error_handler(function($iErrno, $sErrstr) {
+				if(strpos($sErrstr, "MySQL server has gone away") !== false)
+				{
+					return true;
+				}
+				return false;
+			},
+			E_WARNING
+		);
+	}
 
     public function onOpen(ConnectionInterface $oConn)
 	{
