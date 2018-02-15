@@ -77,17 +77,22 @@ function CChatView()
 	}, this);
 	this.useWebSocket = Settings.useWebSocket();
 	this.bWSConnectionEstablished = ko.observable(false);
-	if (window.WebSocket)
+	this.sWSHost = "localhost";
+	this.sWSPort = "8080";
+	if (this.useWebSocket)
 	{
-		if (sAuthToken !== '')
+		if (window.WebSocket)
 		{
-			this.connection = new WebSocket(getWSProtocol() + '://localhost:8080?' + sAuthToken);
+			if (sAuthToken !== '')
+			{
+				this.connection = new WebSocket(getWSProtocol() + '://' + this.sWSHost + ':' + this.sWSPort + '?' + sAuthToken);
+			}
 		}
-	}
-	else
-	{
-		this.connection = null;
-		Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_WEBSOCKETS_NOT_SUPPORTED'));
+		else
+		{
+			this.connection = null;
+			Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_WEBSOCKETS_NOT_SUPPORTED'));
+		}
 	}
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
 }
@@ -324,9 +329,25 @@ CChatView.prototype.sendPost = function ()
 {
 	if (this.bAllowReply && $.trim(this.replyText()) !== '')
 	{
-		var sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss');
-		this.clearTimer();
-		Ajax.send('CreatePost', {'Text': this.replyText(), 'Date': sDate}, this.setTimer, this);
+		var
+			sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss'),
+			sAuthToken = $.cookie('AuthToken') || '';
+		;
+		if (this.useWebSocket)
+		{
+			if (this.connection !== null)
+			{
+				this.connection.send('{' +
+					'"msg": {"Text": "' + this.replyText() + '", "Date": "' + sDate + '"},' +
+					'"token": "' + sAuthToken + '"'+
+				'}');
+			}
+		}
+		else
+		{
+			this.clearTimer();
+			Ajax.send('CreatePost', {'Text': this.replyText(), 'Date': sDate}, this.setTimer, this);
+		}
 		this.addPost({userId: App.getUserId(), name: App.userPublicId(), text: this.replyText(), 'date': sDate}, true, false);
 		this.replyText('');
 	}
@@ -344,20 +365,28 @@ CChatView.prototype.initWS = function ()
 		this.connection.onclose = function(event) {
 			if (event.wasClean)
 			{
-				alert('Соединение закрыто чисто');
+				Screens.showError('The chat connection is closed cleanly');
 			}
 			else
 			{
-				alert('Обрыв соединения');
+				Screens.showError('Chat connection failure');
 			}
 		};
 
-		this.connection.onmessage = function(event) {
-			console.log(event.data);
-		};
+		this.connection.onmessage = _.bind(function(event) {
+			var oMessage = null;
+			if (event.data)
+			{
+				oMessage = JSON.parse(event.data);
+				if (oMessage.UserId && oMessage.PublicId && oMessage.Text && oMessage.Date)
+				{
+					this.addPost({userId: oMessage.UserId, name: oMessage.PublicId, text: oMessage.Text, 'date': oMessage.Date}, true, false);
+				}
+			}
+		}, this);
 
 		this.connection.onerror = function(error) {
-			Screens.showError("Error " + error.message);
+			Screens.showError("Chat error " + error.message);
 		};
 	}
 };

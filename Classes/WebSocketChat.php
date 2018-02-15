@@ -3,7 +3,7 @@ namespace Aurora\Modules\Chat\Classes;
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
-set_time_limit(0);
+
 class WebSocketChat implements MessageComponentInterface {
     protected $oClients;
 
@@ -20,7 +20,9 @@ class WebSocketChat implements MessageComponentInterface {
 		
 		//ignore warnings "mysql has gone away"
 		set_error_handler(function($iErrno, $sErrstr) {
-				if(strpos($sErrstr, "MySQL server has gone away") !== false)
+				if(strpos($sErrstr, "MySQL server has gone away") !== false ||
+					strpos($sErrstr, "Error while sending STMT_PREPARE packet") !== false
+				)
 				{
 					return true;
 				}
@@ -43,8 +45,8 @@ class WebSocketChat implements MessageComponentInterface {
 				if ($oUri instanceof \GuzzleHttp\Psr7\Uri)
 				{
 					$sToken = $oUri->getQuery() | '';
-					$aInfo = $this->getUserInfo($sToken);
-					if (isset($aInfo['userId']) && $aInfo['userId'] > 0)
+					$oUser = $this->getUser($sToken);
+					if ($oUser)
 					{
 						$this->oClients->attach($oConn);
 						$bResult = true;
@@ -73,12 +75,11 @@ class WebSocketChat implements MessageComponentInterface {
 			$oMessage = json_decode($sMsg);
 			if (isset($oMessage) && isset($oMessage->token) && isset($oMessage->msg))
 			{
-				$aInfo = $this->getUserInfo($oMessage->token);
+				$oUser = $this->getUser($oMessage->token);
 
-				if (isset($aInfo['userId']) && $aInfo['userId'] > 0
-					&& isset($oMessage->msg->Text) && isset($oMessage->msg->Date))
+				if ($oUser && isset($oMessage->msg->Text) && isset($oMessage->msg->Date))
 				{
-					$bResult = $this->oChatModule->oApiChatManager->CreatePost($aInfo['userId'], (string) $oMessage->msg->Text, (string) $oMessage->msg->Date);
+					$bResult = $this->oChatModule->oApiChatManager->CreatePost($oUser->EntityId, (string) $oMessage->msg->Text, (string) $oMessage->msg->Date);
 					if ($bResult)
 					{
 						foreach ($this->oClients as $oClient)
@@ -86,7 +87,12 @@ class WebSocketChat implements MessageComponentInterface {
 							if ($oFrom !== $oClient)
 							{
 								// The sender is not the receiver, send to each client connected
-								$oClient->send($oMessage->msg->Text);
+								$oClient->send(json_encode([
+									'UserId' => $oUser->EntityId,
+									'PublicId' => $oUser->PublicId,
+									'Text' => $oMessage->msg->Text,
+									'Date' => $oMessage->msg->Date
+								]));
 							}
 						}
 					}
@@ -122,14 +128,28 @@ class WebSocketChat implements MessageComponentInterface {
         $oConn->close();
     }
 	
-	private function getUserInfo($sAuthToken)
+	private function getUser($sAuthToken)
 	{
-		return $this->oIntegrator->getAuthenticatedUserInfo((string) $sAuthToken);
+		$aAccountHashTable = \Aurora\System\Api::UserSession()->Get($sAuthToken);
+		if (is_array($aAccountHashTable) && isset($aAccountHashTable['token']) &&
+			'auth' === $aAccountHashTable['token'] && 0 < strlen($aAccountHashTable['id'])) {
+			
+			$oCoreModule = \Aurora\System\Api::GetModule('Core');
+			if ($oCoreModule)
+			{
+				$oUser = $oCoreModule->oApiUsersManager->getUser((int) $aAccountHashTable['id']);				
+				if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+				{
+					return $oUser;
+				}
+			}
+		}
+		return false;
 	}
 
 	private function log($sMessage)
 	{
-		echo $sMessage . "\n";
+//		echo $sMessage . "\n";
 		\Aurora\System\Api::Log($sMessage, \Aurora\System\Enums\LogLevel::Full, 'chat-daemon-');
 	}
 }
