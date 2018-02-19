@@ -348,7 +348,7 @@ CChatView.prototype.sendPost = function ()
 			this.clearTimer();
 			Ajax.send('CreatePost', {'Text': this.replyText(), 'Date': sDate}, this.setTimer, this);
 		}
-		this.addPost({userId: App.getUserId(), name: App.userPublicId(), text: this.replyText(), 'date': sDate}, true, false);
+		this.addPost({userId: App.getUserId(), name: App.getUserPublicId(), text: this.replyText(), 'date': sDate}, true, false);
 		this.replyText('');
 	}
 	return false;
