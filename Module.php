@@ -73,7 +73,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	
 	public function GetPostsCount()
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::Customer);
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		
 		return $this->oApiChatManager->GetPostsCount();
 	}
@@ -87,7 +87,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 */
 	public function GetPosts($Offset, $Limit)
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::Customer);
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		
 		$aPosts = $this->oApiChatManager->GetPosts($Offset, $Limit);
 		$this->broadcastEvent('Chat::GetPosts', $aPosts);
