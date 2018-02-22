@@ -15,7 +15,7 @@ class WebSocketChat implements MessageComponentInterface {
 		$this->log("Process is started.");
 		\Aurora\System\Db\Pdo\MySql::$bUseReconnect = true;
         $this->oClients = new \SplObjectStorage;
-		$this->oIntegrator = new \Aurora\Modules\Core\Managers\Integrator();
+		$this->oIntegrator = \Aurora\Modules\Core\Managers\Integrator::getInstance();
 		$this->oChatModule = \Aurora\System\Api::GetModule('Chat');
 		
 		//ignore warnings "mysql has gone away"
