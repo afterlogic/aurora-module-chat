@@ -5,7 +5,7 @@ var
 	$ = require('jquery'),
 	ko = require('knockout'),
 	moment = require('moment'),
-	Screens = require('%PathToCoreWebclientModule%/js/Screens.js'),
+	
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	
@@ -13,8 +13,7 @@ var
 	
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	
-	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
-	Settings = require('modules/%ModuleName%/js/Settings.js')
+	Ajax = require('modules/%ModuleName%/js/Ajax.js')
 ;
 
 /**
@@ -24,7 +23,6 @@ var
  */
 function CChatView()
 {
-	var sAuthToken = $.cookie('AuthToken') || '';
 	CAbstractScreenView.call(this, '%ModuleName%');
 	
 	/**
@@ -75,25 +73,7 @@ function CChatView()
 	this.replyTextFocus.subscribe(function () {
 		this.scrollIfNecessary(500);
 	}, this);
-	this.useWebSocket = Settings.useWebSocket();
-	this.bWSConnectionEstablished = ko.observable(false);
-	this.sWSHost = "localhost";
-	this.sWSPort = "8080";
-	if (this.useWebSocket)
-	{
-		if (window.WebSocket)
-		{
-			if (sAuthToken !== '')
-			{
-				this.connection = new WebSocket(getWSProtocol() + '://' + this.sWSHost + ':' + this.sWSPort + '?' + sAuthToken);
-			}
-		}
-		else
-		{
-			this.connection = null;
-			Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_WEBSOCKETS_NOT_SUPPORTED'));
-		}
-	}
+	
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
 }
 
@@ -128,10 +108,6 @@ CChatView.prototype.scrollIfNecessary = function (iDelay)
  */
 CChatView.prototype.onShow = function ()
 {
-	if (this.useWebSocket)
-	{
-		this.initWS();
-	}
 	if (this.posts().length === 0)
 	{
 		Ajax.send('GetPostsCount', null, function (oResponse) {
@@ -163,10 +139,7 @@ CChatView.prototype.showMore = function ()
  */
 CChatView.prototype.getPosts = function ()
 {
-	if (!this.useWebSocket)
-	{
-		this.clearTimer();
-	}
+	this.clearTimer();
 	Ajax.send('GetPosts', {Offset: this.offset(), Limit: this.offset() + this.posts().length + 1000}, this.onGetPostsResponse, this);
 };
 
@@ -251,12 +224,9 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 				this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId !== App.getUserId());
 			}
 		}
-
+		
 		this.iLastPostIndex = this.posts().length - 1;
-		if (!this.useWebSocket)
-		{
-			this.setTimer();
-		}
+		this.setTimer();
 	}
 	else if (!this.gettingMore())
 	{
@@ -329,71 +299,13 @@ CChatView.prototype.sendPost = function ()
 {
 	if (this.bAllowReply && $.trim(this.replyText()) !== '')
 	{
-		var
-			sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss'),
-			sAuthToken = $.cookie('AuthToken') || '';
-		;
-		if (this.useWebSocket)
-		{
-			if (this.connection !== null)
-			{
-				this.connection.send('{' +
-					'"msg": {"Text": "' + this.replyText() + '", "Date": "' + sDate + '"},' +
-					'"token": "' + sAuthToken + '"'+
-				'}');
-			}
-		}
-		else
-		{
-			this.clearTimer();
-			Ajax.send('CreatePost', {'Text': this.replyText(), 'Date': sDate}, this.setTimer, this);
-		}
-		this.addPost({userId: App.getUserId(), name: App.getUserPublicId(), text: this.replyText(), 'date': sDate}, true, false);
+		var sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss');
+		this.clearTimer();
+		Ajax.send('CreatePost', {'Text': this.replyText(), 'Date': sDate}, this.setTimer, this);
+		this.addPost({userId: App.getUserId(), name: App.userPublicId(), text: this.replyText(), 'date': sDate}, true, false);
 		this.replyText('');
 	}
 	return false;
 };
-
-CChatView.prototype.initWS = function ()
-{
-	if (this.connection !== null && this.connection.readyState !== 3) //3 - CLOSED
-	{
-		this.connection.onopen = function() {
-			console.log("Connection established.");
-		};
-
-		this.connection.onclose = function(event) {
-			if (event.wasClean)
-			{
-				Screens.showError('The chat connection is closed cleanly');
-			}
-			else
-			{
-				Screens.showError('Chat connection failure');
-			}
-		};
-
-		this.connection.onmessage = _.bind(function(event) {
-			var oMessage = null;
-			if (event.data)
-			{
-				oMessage = JSON.parse(event.data);
-				if (oMessage.UserId && oMessage.PublicId && oMessage.Text && oMessage.Date)
-				{
-					this.addPost({userId: oMessage.UserId, name: oMessage.PublicId, text: oMessage.Text, 'date': oMessage.Date}, true, false);
-				}
-			}
-		}, this);
-
-		this.connection.onerror = function(error) {
-			Screens.showError("Chat error " + error.message);
-		};
-	}
-};
-
-function getWSProtocol()
-{
-	return window.location.protocol === "https:" ? "ws" : "ws"; //TODO use wss for https
-}
 
 module.exports = new CChatView();

@@ -2,9 +2,5 @@
     "Disabled": [
 		false,
 		"bool"
-	],
-	"UseWebSocket": [
-		false,
-		"bool"
 	]
 }

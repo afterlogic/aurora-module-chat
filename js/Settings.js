@@ -17,7 +17,6 @@ module.exports = {
 	 * Otherwise the Core doesn't display module tab in header and its screens.
 	 */
 	enableModule: ko.observable(false),
-	useWebSocket: ko.observable(false),
 	
 	/**
 	 * Initializes settings from AppData object sections.
@@ -27,11 +26,10 @@ module.exports = {
 	init: function (oAppData)
 	{
 		var oAppDataSection = oAppData['%ModuleName%'];
-
+		
 		if (!_.isEmpty(oAppDataSection))
 		{
 			this.enableModule(Types.pBool(oAppDataSection.EnableModule, this.enableModule()));
-			this.useWebSocket(Types.pBool(oAppDataSection.UseWebSocket, this.useWebSocket()));
 		}
 	},
 	

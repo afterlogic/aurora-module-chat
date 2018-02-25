@@ -42,8 +42,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
 			return array(
-				'EnableModule' => $oUser->{$this->GetName().'::EnableModule'},
-				'UseWebSocket' => $this->getConfig('UseWebSocket', false)
+				'EnableModule' => $oUser->{$this->GetName().'::EnableModule'}
 			);
 		}
 		
