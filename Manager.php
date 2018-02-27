@@ -49,13 +49,14 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	/**
 	 * Obtains posts of Chat Module.
 	 * 
-	 * @param int $Offset uses for obtaining a partial list.
-	 * @param int $Limit uses for obtaining a partial list.
+	 * @param int $iOffset uses for obtaining a partial list.
+	 * @param int $iLimit uses for obtaining a partial list.
+	 * @param array $aSearchFilters
 	 * @return array
 	 */
-	public function GetPosts($Offset = 0, $Limit = 0)
+	public function GetPosts($iOffset = 0, $iLimit = 0, $aSearchFilters = [])
 	{
-		$aResult = array();
+		$aResult = [];
 		try
 		{
 			$aResults = $this->oEavManager->getEntities(
@@ -63,9 +64,9 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 				array(
 					'UserId', 'Text', 'Date', 'IsHtml'
 				),
-				$Offset,
-				$Limit,
-				array()
+				$iOffset,
+				$iLimit,
+				$aSearchFilters
 			);
 			
 			$aUsers = array();

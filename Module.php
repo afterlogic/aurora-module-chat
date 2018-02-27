@@ -36,8 +36,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 */
 	public function GetSettings()
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::Anonymous);
-		
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
@@ -101,15 +99,50 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 * Creates a new post for authenticated user.
 	 * 
 	 * @param string $Text text of the new post.
-	 * @param string $Date date of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($Text, $Date)
+	public function CreatePost($Text)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		
 		$iUserId = \Aurora\System\Api::getAuthenticatedUserId();
-		$this->oApiChatManager->CreatePost($iUserId, $Text, $Date);
+		$oDate = new \DateTime();
+		$oDate->setTimezone(new \DateTimeZone('UTC'));
+		$sDate = $oDate->format('Y-m-d H:i:s');
+		$this->oApiChatManager->CreatePost($iUserId, $Text, $sDate);
 		return true;
-	}	
+	}
+	
+	public function GetLastPosts()
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+
+		$iEndTime = time() + 29;
+//		\Aurora\System\Api::Log("start polling " . $iEndTime, \Aurora\System\Enums\LogLevel::Full, 'pooling-');
+		$oDate = new \DateTime("-1 seconds");
+		$oDate->setTimezone(new \DateTimeZone('UTC'));
+		$sCheckTime = $oDate->format('Y-m-d H:i:s');
+		$mResult = false;
+		while (time() < $iEndTime)
+		{
+			usleep(500000);
+			$aPosts = $this->getPostsByDate($sCheckTime);
+			if(is_array($aPosts) && !empty($aPosts))
+			{
+				$mResult = ['Collection' => $aPosts];
+				break;
+			}
+		}
+//		\Aurora\System\Api::Log("end polling " . $iEndTime, \Aurora\System\Enums\LogLevel::Full, 'pooling-');
+		return $mResult;
+	}
+	
+	protected function getPostsByDate($Date)
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+		
+		$aPosts = $this->oApiChatManager->GetPosts(0, 0, ['Date' => [(string) $Date, '>=']]);
+		$this->broadcastEvent('Chat::GetPosts', $aPosts);
+		return $aPosts;
+	}
 }

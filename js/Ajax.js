@@ -38,7 +38,7 @@ module.exports = {
 	 * @param {Function} fResponseHandler Callback that should be called after response receiving.
 	 * @param {Object} oContext Context for callback.
 	 */
-	send: function (sMethod, oParameters, fResponseHandler, oContext) {
-		Ajax.send(Settings.ServerModuleName, sMethod, oParameters, fResponseHandler, oContext);
+	send: function (sMethod, oParameters, fResponseHandler, oContext, iTimeout) {
+		Ajax.send(Settings.ServerModuleName, sMethod, oParameters, fResponseHandler, oContext, iTimeout);
 	}
 };

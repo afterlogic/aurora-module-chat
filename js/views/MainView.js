@@ -118,6 +118,7 @@ CChatView.prototype.onShow = function ()
 			}
 			this.getPosts();
 		}, this);
+		this.getLastPosts();
 	}
 };
 
@@ -139,8 +140,12 @@ CChatView.prototype.showMore = function ()
  */
 CChatView.prototype.getPosts = function ()
 {
-	this.clearTimer();
 	Ajax.send('GetPosts', {Offset: this.offset(), Limit: this.offset() + this.posts().length + 1000}, this.onGetPostsResponse, this);
+};
+
+CChatView.prototype.getLastPosts = function ()
+{
+	Ajax.send('GetLastPosts', {}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
 };
 
 /**
@@ -172,7 +177,6 @@ CChatView.prototype.addPost = function (oPost, bEnd, bRecent)
 
 /**
  * Posts request callback. Parses server response with posts. Adds new posts to the end or begining of the posts array.
- * Starts the timer for next posts request.
  * 
  * @param {Object} oResponse Object with data from server.
  * @param {Object} oRequest Object with parameters wich were used for request to the server.
@@ -185,7 +189,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 			aPosts = oResponse.Result.Collection,
 			oLastPost = this.posts()[this.iLastPostIndex],
 			fEqualPosts = function (oFirstPost, oSecondPost) {
-				return !!oFirstPost && !!oSecondPost && oFirstPost.text === oSecondPost.text && oFirstPost.date === oSecondPost.date;
+				return !!oFirstPost && !!oSecondPost && oFirstPost.text === oSecondPost.text && oFirstPost.userId === oSecondPost.userId && oFirstPost.recent === true;
 			}
 		;
 		if (this.posts().length === 0)
@@ -226,11 +230,6 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 		}
 		
 		this.iLastPostIndex = this.posts().length - 1;
-		this.setTimer();
-	}
-	else if (!this.gettingMore())
-	{
-		this.setTimer();
 	}
 	this.gettingMore(false);
 };
@@ -274,23 +273,6 @@ CChatView.prototype.getDisplayDate = function (oMomentUtc)
 };
 
 /**
- * Clears timer for requesting posts.
- */
-CChatView.prototype.clearTimer = function ()
-{
-	clearTimeout(this.iTimer);
-};
-
-/**
- * Starts timer for requesting posts.
- */
-CChatView.prototype.setTimer = function ()
-{
-	this.clearTimer();
-	this.iTimer = setTimeout(_.bind(this.getPosts, this, 1), 3000);
-};
-
-/**
  * Sends request to the server for creating post.
  * 
  * @returns {Boolean} Prevents bubbling of keyup event.
@@ -300,12 +282,17 @@ CChatView.prototype.sendPost = function ()
 	if (this.bAllowReply && $.trim(this.replyText()) !== '')
 	{
 		var sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss');
-		this.clearTimer();
-		Ajax.send('CreatePost', {'Text': this.replyText(), 'Date': sDate}, this.setTimer, this);
-		this.addPost({userId: App.getUserId(), name: App.userPublicId(), text: this.replyText(), 'date': sDate}, true, false);
+		Ajax.send('CreatePost', {'Text': this.replyText()}, false, this);
+		this.addPost({userId: App.getUserId(), name: App.getUserPublicId(), text: this.replyText(), 'date': sDate, 'recent': true}, true, false);
 		this.replyText('');
 	}
 	return false;
+};
+
+CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
+{
+	this.onGetPostsResponse(oResponse, oRequest);
+	setTimeout(_.bind(this.getLastPosts, this),1000);
 };
 
 module.exports = new CChatView();
