@@ -35,7 +35,7 @@ function CChatView()
 	this.posts = ko.observableArray([]);
 	this.gettingMore = ko.observable(false);
 	this.offset = ko.observable(0);
-	
+	this.postsPerPage = 10;
 	// Quick Reply Part
 	
 	this.domQuickReply = ko.observable(null);
@@ -74,6 +74,7 @@ function CChatView()
 		this.scrollIfNecessary(500);
 	}, this);
 	
+	this.postsOnPage = ko.observable(this.postsPerPage);
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
 }
 
@@ -131,7 +132,8 @@ CChatView.prototype.showMore = function ()
 	{
 		this.gettingMore(true);
 	}
-	this.offset((this.offset() >= 10) ? this.offset() - 10 : 0);
+	this.offset((this.offset() >= this.postsPerPage) ? this.offset() - this.postsPerPage : 0);
+	this.postsOnPage(this.postsOnPage() + this.postsPerPage);
 	this.getPosts();
 };
 
@@ -140,7 +142,7 @@ CChatView.prototype.showMore = function ()
  */
 CChatView.prototype.getPosts = function ()
 {
-	Ajax.send('GetPosts', {Offset: this.offset(), Limit: this.offset() + this.posts().length + 1000}, this.onGetPostsResponse, this);
+	Ajax.send('GetPosts', {Offset: this.offset(), Limit: 10}, this.onGetPostsResponse, this);
 };
 
 CChatView.prototype.getLastPosts = function ()
@@ -162,7 +164,7 @@ CChatView.prototype.addPost = function (oPost, bEnd, bRecent)
 	oPost.displayText = oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text);
 
 	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Recent': bRecent});
-	
+
 	if (bEnd)
 	{
 		this.posts.push(oPost);
@@ -171,8 +173,6 @@ CChatView.prototype.addPost = function (oPost, bEnd, bRecent)
 	{
 		this.posts.unshift(oPost);
 	}
-	
-	this.iLastPostIndex = this.posts().length - 1;
 };
 
 /**
@@ -186,11 +186,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 	if (oResponse.Result && Types.isNonEmptyArray(oResponse.Result.Collection))
 	{
 		var
-			aPosts = oResponse.Result.Collection,
-			oLastPost = this.posts()[this.iLastPostIndex],
-			fEqualPosts = function (oFirstPost, oSecondPost) {
-				return !!oFirstPost && !!oSecondPost && oFirstPost.text === oSecondPost.text && oFirstPost.userId === oSecondPost.userId && oFirstPost.recent === true;
-			}
+			aPosts = oResponse.Result.Collection
 		;
 		if (this.posts().length === 0)
 		{
@@ -198,55 +194,52 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 				this.addPost(oPost, true, false);
 			}, this));
 		}
-		else if (this.posts().length !== aPosts.length || !fEqualPosts(oLastPost, aPosts[aPosts.length - 1]))
+		else
 		{
+			this.removeOwnPosts();
+			
 			var
-				oFirstPost = this.posts()[0],
-				iFirstIndex = _.findIndex(aPosts, function (oPost) {
-					return fEqualPosts(oFirstPost, oPost);
-				}),
-				iLastIndex = _.findIndex(aPosts, function (oPost) {
-					return fEqualPosts(oLastPost, oPost);
-				})
+				iFirstIndex = 0,
+				iLastIndex = aPosts.length - 1
 			;
 			
-			this.removeLastPosts();
-			
-			/**
-			 * Adds all new posts to the beginning of the post list.
-			 */
-			for (var iIndex = iFirstIndex - 1; iIndex >= 0; iIndex--)
+			if (typeof oResponse.Result.Offset !== 'undefined')
 			{
-				this.addPost(aPosts[iIndex], false, false);
+				/**
+				* Adds all new posts to the beginning of the post list.
+				*/
+				for (var iIndex = iLastIndex; iIndex >= 0; iIndex--)
+				{
+					this.addPost(aPosts[iIndex], false, false);
+				}
 			}
-			
-			/**
-			 * Adds all new posts to the end of the post list.
-			 */
-			for (var iIndex = iLastIndex + 1; iIndex < aPosts.length; iIndex++)
+			else
 			{
-				this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId !== App.getUserId());
+				/**
+				 * Adds all new posts to the end of the post list.
+				 */
+				for (var iIndex = iFirstIndex; iIndex < aPosts.length; iIndex++)
+				{
+					this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId !== App.getUserId());
+				}
 			}
 		}
-		
-		this.iLastPostIndex = this.posts().length - 1;
+		this.removeExtraPosts();
 	}
 	this.gettingMore(false);
 };
 
 /**
- * Removes all awn posts that were added between posts requests.
+ * Removes all own posts that were added between posts requests.
  */
-CChatView.prototype.removeLastPosts = function ()
+CChatView.prototype.removeOwnPosts = function ()
 {
-	var
-		iLastIndex = this.iLastPostIndex,
-		iIndex = this.posts().length - 1
-	;
-	
-	for (; iIndex > iLastIndex ; iIndex--)
+	for (var i = 0; i < this.posts().length; i++)
 	{
-		this.posts.remove(this.posts()[iIndex]);
+		if (this.posts()[i].recent)
+		{
+			this.posts.remove(this.posts()[i]);
+		}
 	}
 };
 
@@ -295,4 +288,15 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 	setTimeout(_.bind(this.getLastPosts, this),1000);
 };
 
+CChatView.prototype.removeExtraPosts = function ()
+{
+	var iNumberOfExtraPosts = this.posts().length - this.postsOnPage();
+	if (iNumberOfExtraPosts > 0)
+	{
+		for (var i = 0; i < iNumberOfExtraPosts; i++)
+		{
+			this.posts.remove(this.posts()[i]);
+		}
+	}
+};
 module.exports = new CChatView();
