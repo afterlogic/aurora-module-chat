@@ -13,7 +13,8 @@ var
 	
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	
-	Ajax = require('modules/%ModuleName%/js/Ajax.js')
+	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
+	HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
 ;
 
 /**
@@ -73,9 +74,9 @@ function CChatView()
 	this.replyTextFocus.subscribe(function () {
 		this.scrollIfNecessary(500);
 	}, this);
-	
 	this.postsOnPage = ko.observable(this.postsPerPage);
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
+	this.getLastPosts();
 }
 
 _.extendOwn(CChatView.prototype, CAbstractScreenView.prototype);
@@ -109,6 +110,7 @@ CChatView.prototype.scrollIfNecessary = function (iDelay)
  */
 CChatView.prototype.onShow = function ()
 {
+	HeaderItemView.isUnseen(false);
 	if (this.posts().length === 0)
 	{
 		Ajax.send('GetPostsCount', null, function (oResponse) {
@@ -119,7 +121,6 @@ CChatView.prototype.onShow = function ()
 			}
 			this.getPosts();
 		}, this);
-		this.getLastPosts();
 	}
 };
 
@@ -226,6 +227,10 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 			}
 		}
 		this.removeExtraPosts();
+		if (!HeaderItemView.isCurrent())
+		{
+			HeaderItemView.isUnseen(true);
+		}
 	}
 	this.gettingMore(false);
 };

@@ -48,8 +48,7 @@ module.exports = function (oAppData) {
 			getHeaderItem: function () {
 				if (HeaderItemView === null)
 				{
-					var CHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js');
-					HeaderItemView = new CHeaderItemView(TextUtils.i18n('%MODULENAME%/ACTION_SHOW_CHAT'));
+					HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
 				}
 
 				return {

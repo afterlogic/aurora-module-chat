@@ -1,0 +1,9 @@
+<span class="item emails first-child" data-bind="dropdown: {control: false}, 
+		css: {'current': isCurrent(), 'disabled': false, 'has_control': false}">
+	<span class="helper" data-bind="text: linkText, css: {'has_control': false}"></span>
+	<a class="link" href="javascript: void(0);" data-bind="attr: { href: mainHref }">
+		<span class="icon"></span>
+		<span class="text" data-bind="text: linkText"></span>
+		<span class="unseen-chat" data-bind="visible: isUnseen()"></span>
+	</a>
+</span>
