@@ -93,7 +93,7 @@ CChatView.prototype.scrollIfNecessary = function (iDelay)
 	if (this.scrolledPostsDom() && this.scrolledPostsDom()[0])
 	{
 		var oScrolledPostsDom = this.scrolledPostsDom()[0];
-		this.bBottom = (oScrolledPostsDom.clientHeight + oScrolledPostsDom.scrollTop) === oScrolledPostsDom.scrollHeight;
+		this.bBottom = (oScrolledPostsDom.clientHeight + oScrolledPostsDom.scrollTop) <= oScrolledPostsDom.scrollHeight;
 	}
 	
 	if (this.bBottom)
@@ -156,14 +156,15 @@ CChatView.prototype.getLastPosts = function ()
  * 
  * @param {Object} oPost Post object.
  * @param {boolean} bEnd Indicates if post should be added to the end of the posts array or to the its beginning.
- * @param {boolean} bRecent Indicates if post is recent or not.
+ * @param {boolean} bOwn Indicates own post.
  */
-CChatView.prototype.addPost = function (oPost, bEnd, bRecent)
+CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 {
 	oPost.displayDate = this.getDisplayDate(moment.utc(oPost.date));
 	oPost.displayText = oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text);
+	oPost.isOwn = bOwn;
 
-	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Recent': bRecent});
+	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Own': bOwn});
 
 	if (bEnd)
 	{
@@ -191,7 +192,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 		if (this.posts().length === 0)
 		{
 			_.each(aPosts, _.bind(function (oPost) {
-				this.addPost(oPost, true, false);
+				this.addPost(oPost, true, oPost.userId === App.getUserId());
 			}, this));
 		}
 		else
@@ -210,7 +211,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 				*/
 				for (var iIndex = iLastIndex; iIndex >= 0; iIndex--)
 				{
-					this.addPost(aPosts[iIndex], false, false);
+					this.addPost(aPosts[iIndex], false, oPost.userId === App.getUserId());
 				}
 			}
 			else
@@ -220,7 +221,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 				 */
 				for (var iIndex = iFirstIndex; iIndex < aPosts.length; iIndex++)
 				{
-					this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId !== App.getUserId());
+					this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId === App.getUserId());
 				}
 			}
 		}
@@ -230,7 +231,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 };
 
 /**
- * Removes all own posts that were added between posts requests.
+ * Removes recent own posts that were added between posts requests.
  */
 CChatView.prototype.removeOwnPosts = function ()
 {
@@ -276,7 +277,7 @@ CChatView.prototype.sendPost = function ()
 	{
 		var sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss');
 		Ajax.send('CreatePost', {'Text': this.replyText()}, false, this);
-		this.addPost({userId: App.getUserId(), name: App.getUserPublicId(), text: this.replyText(), 'date': sDate, 'recent': true}, true, false);
+		this.addPost({userId: App.getUserId(), name: App.getUserPublicId(), text: this.replyText(), date: sDate, recent: true}, true, true);
 		this.replyText('');
 	}
 	return false;
