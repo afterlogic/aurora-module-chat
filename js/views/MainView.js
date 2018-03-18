@@ -14,7 +14,8 @@ var
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
-	HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
+	HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js'),
+	PostCheck = require('modules/%ModuleName%/js/PostCheck.js')
 ;
 
 /**
@@ -76,7 +77,7 @@ function CChatView()
 	}, this);
 	this.postsOnPage = ko.observable(this.postsPerPage);
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
-	this.getLastPosts();
+	this.IsCheckStarted = ko.observable(false);
 }
 
 _.extendOwn(CChatView.prototype, CAbstractScreenView.prototype);
@@ -110,6 +111,8 @@ CChatView.prototype.scrollIfNecessary = function (iDelay)
  */
 CChatView.prototype.onShow = function ()
 {
+	//After showing chat tab we stopping service which checking for new posts
+	PostCheck.stopCheck();
 	HeaderItemView.isUnseen(false);
 	if (this.posts().length === 0)
 	{
@@ -119,7 +122,7 @@ CChatView.prototype.onShow = function ()
 			{
 				this.offset(iCount - 10);
 			}
-			this.getPosts();
+			this.getPosts(/*bStartPostsCheck*/true);
 		}, this);
 	}
 };
@@ -140,15 +143,26 @@ CChatView.prototype.showMore = function ()
 
 /**
  * Requests posts from the server with given offset and very big limit.
+ * @param {boolean} bStartPostsCheck Indicates that process which checking for new posts would be started after getting posts 
  */
-CChatView.prototype.getPosts = function ()
+CChatView.prototype.getPosts = function (bStartPostsCheck)
 {
-	Ajax.send('GetPosts', {Offset: this.offset(), Limit: 10}, this.onGetPostsResponse, this);
+	//Start checking of new posts after getting response for "getPosts" request
+	Ajax.send('GetPosts', {Offset: this.offset(), Limit: 10},
+		_.bind(function (oResponse, oRequest) {
+			this.onGetPostsResponse(oResponse, oRequest);
+			if (bStartPostsCheck === true && !this.IsCheckStarted())
+			{
+				this.getLastPosts();
+				this.IsCheckStarted(true);
+			}
+		}, this),
+		this);
 };
 
 CChatView.prototype.getLastPosts = function ()
 {
-	Ajax.send('GetLastPosts', {}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
+	Ajax.send('GetLastPosts', {'IsUpdateLastShowPostsDate':HeaderItemView.isCurrent()}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
 };
 
 /**
@@ -212,7 +226,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 				*/
 				for (var iIndex = iLastIndex; iIndex >= 0; iIndex--)
 				{
-					this.addPost(aPosts[iIndex], false, oPost.userId === App.getUserId());
+					this.addPost(aPosts[iIndex], false, aPosts[iIndex].userId === App.getUserId());
 				}
 			}
 			else

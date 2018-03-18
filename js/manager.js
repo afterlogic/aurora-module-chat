@@ -7,10 +7,9 @@ module.exports = function (oAppData) {
 	{
 		var
 			TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
-
 			Settings = require('modules/%ModuleName%/js/Settings.js'),
-			
-			HeaderItemView = null
+			PostCheck = require('modules/%ModuleName%/js/PostCheck.js'),		
+			HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
 		;
 
 		Settings.init(oAppData);
@@ -24,7 +23,16 @@ module.exports = function (oAppData) {
 			 * @param {Object} ModulesManager
 			 */
 			start: function (ModulesManager) {
-				ModulesManager.run('SettingsWebclient', 'registerSettingsTab', [function () { return require('modules/%ModuleName%/js/views/ChatSettingsFormView.js'); }, Settings.HashModuleName, TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB')]);
+				ModulesManager.run(
+					'SettingsWebclient',
+					'registerSettingsTab',
+					[
+						function () { return require('modules/%ModuleName%/js/views/ChatSettingsFormView.js'); },
+						Settings.HashModuleName,
+						TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB')
+					]
+				);
+				PostCheck.startCheck();
 			},
 
 			/**
@@ -46,11 +54,6 @@ module.exports = function (oAppData) {
 			 * @returns {Object}
 			 */
 			getHeaderItem: function () {
-				if (HeaderItemView === null)
-				{
-					HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
-				}
-
 				return {
 					item: HeaderItemView,
 					name: Settings.HashModuleName

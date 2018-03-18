@@ -23,9 +23,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		
 		$this->extendObject(
 			'Aurora\Modules\Core\Classes\User', 
-			array(
-				'EnableModule' => array('bool', true)
-			)
+			[
+				'EnableModule' => ['bool', true],
+				'LastShowPostsDate'	=> ['datetime', date('Y-m-d H:i:s', 0)]
+			]
 		);
 	}
 	
@@ -113,28 +114,53 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return true;
 	}
 	
-	public function GetLastPosts()
+	public function GetLastPosts($IsUpdateLastShowPostsDate = false)
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-
-		$iEndTime = time() + 29;
-//		\Aurora\System\Api::Log("start polling " . $iEndTime, \Aurora\System\Enums\LogLevel::Full, 'pooling-');
-		$oDate = new \DateTime("-1 seconds");
-		$oDate->setTimezone(new \DateTimeZone('UTC'));
-		$sCheckTime = $oDate->format('Y-m-d H:i:s');
 		$mResult = false;
-		while (time() < $iEndTime)
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
-			usleep(500000);
-			$aPosts = $this->getPostsByDate($sCheckTime);
-			if(is_array($aPosts) && !empty($aPosts))
+			$iEndTime = time() + 29;
+			$oNow = new \DateTime("-1 seconds");
+			$oNow->setTimezone(new \DateTimeZone('UTC'));
+			$sCheckTime = $oNow->format('Y-m-d H:i:s');
+			if ($IsUpdateLastShowPostsDate || $oUser->{$this->GetName() . '::LastShowPostsDate'} === date('Y-m-d H:i:s', 0))
 			{
-				$mResult = ['Collection' => $aPosts];
-				break;
+				$oUser->{$this->GetName() . '::LastShowPostsDate'} = $sCheckTime;
+				$oCoreDecorator = \Aurora\System\Api::GetModuleDecorator('Core');
+				if ($oCoreDecorator)
+				{
+					$oCoreDecorator->UpdateUserObject($oUser);
+				}
+			}
+
+			while (time() < $iEndTime)
+			{
+				usleep(500000);
+				$aPosts = $this->getPostsByDate($sCheckTime);
+				if(is_array($aPosts) && !empty($aPosts))
+				{
+					$mResult = ['Collection' => $aPosts];
+					break;
+				}
 			}
 		}
-//		\Aurora\System\Api::Log("end polling " . $iEndTime, \Aurora\System\Enums\LogLevel::Full, 'pooling-');
 		return $mResult;
+	}
+	
+	public function IsHaveUnseen()
+	{
+		$bResult = false;
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		{
+			$aUnseenPosts = $this->getPostsByDate($oUser->{$this->GetName() . '::LastShowPostsDate'});
+			if (is_array($aUnseenPosts) && count($aUnseenPosts) > 0)
+			{
+				$bResult = true;
+			}
+		}
+		return $bResult;
 	}
 	
 	protected function getPostsByDate($Date)
