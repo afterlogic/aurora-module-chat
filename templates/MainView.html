@@ -11,12 +11,12 @@
 									<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_LOAD_EARLIER_MESSAGES_IN_PROGRESS'}, visible: gettingMore"></span>
 								</div>
 								<!-- ko foreach: posts -->
-								<div class="post">
+								<div class="post" data-bind="css: {'own-post': isOwn}">
 									<div>
 										<span class="name" data-bind="text: name"></span>
 										<span class="time" data-bind="text: displayDate"></span>
 									</div>
-									<div class="text" data-bind="html: displayText, css: {'own-post': isOwn}"></div>
+									<div class="text" data-bind="html: displayText, css: {'own-post-text': isOwn}"></div>
 								</div>
 								<!-- /ko -->
 							</div>
