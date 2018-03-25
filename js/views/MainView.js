@@ -319,4 +319,10 @@ CChatView.prototype.removeExtraPosts = function ()
 		}
 	}
 };
+
+CChatView.prototype.setTextFocus = function ()
+{
+	$('#reply_text').focus();
+};
+
 module.exports = new CChatView();
