@@ -69,9 +69,6 @@ function CChatView()
 	this.scrolledPostsDom = ko.observable(null);
 	this.scrollTrigger = ko.observable(0);
 	this.bBottom = false;
-	this.posts.subscribe(function () {
-		this.scrollIfNecessary(0);
-	}, this);
 	this.replyTextFocus.subscribe(function () {
 		this.scrollIfNecessary(500);
 	}, this);
@@ -209,6 +206,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 			_.each(aPosts, _.bind(function (oPost) {
 				this.addPost(oPost, true, oPost.userId === App.getUserId());
 			}, this));
+			this.scrollIfNecessary(500);
 		}
 		else
 		{
@@ -238,6 +236,7 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 				{
 					this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId === App.getUserId());
 				}
+				this.scrollIfNecessary(500);
 			}
 		}
 		this.removeExtraPosts();
