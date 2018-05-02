@@ -17,10 +17,12 @@ namespace Aurora\Modules\Chat;
 class Module extends \Aurora\System\Module\AbstractModule
 {
 	public $oApiChatManager = null;
+	public $oApiChannelsManager = null;
 	
 	public function init() 
 	{
-		$this->oApiChatManager = new Manager($this);
+		$this->oApiChatManager = new Managers\Posts($this);
+		$this->oApiChannelsManager = new Managers\Channels($this);
 		
 		$this->extendObject(
 			'Aurora\Modules\Core\Classes\User', 
@@ -103,7 +105,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 * @param string $Text text of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($Text)
+	public function CreatePost($Text, $ChannelUUID)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		
@@ -111,7 +113,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oDate = new \DateTime();
 		$oDate->setTimezone(new \DateTimeZone('UTC'));
 		$sDate = $oDate->format('Y-m-d H:i:s');
-		$this->oApiChatManager->CreatePost($iUserId, $Text, $sDate);
+		$this->oApiChatManager->CreatePost($iUserId, $Text, $sDate, $ChannelUUID);
 		return true;
 	}
 	
@@ -164,6 +166,38 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $bResult;
 	}
 	
+	public function CreateChannel($Name)
+	{
+		$bResult = false;
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		{
+			$oChannel = new \Aurora\Modules\Chat\Classes\Channel($this->GetName());
+			$oChannel->Name = $Name;
+			$iChannelId = $this->oApiChannelsManager->CreateChannel($oChannel);
+			if ($iChannelId)
+			{
+				$bResult = !!$this->oApiChannelsManager->AddUserToChannel($iChannelId, $oUser->UUID);
+			}
+		}
+		return $bResult;
+	}
+	
+	public function GetUserChannels()
+	{
+		$aResult = [];
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		{
+			$aChannelUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+			$aResult = $this->oApiChannelsManager->GetChannels(0, 0,
+				['UUID' => [\array_unique($aChannelUUIDs), 'IN']],
+				['Name']
+			);
+		}
+		return $aResult;
+	}
+	
 	protected function getPostsByDate($Date)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
@@ -171,5 +205,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$aPosts = $this->oApiChatManager->GetPosts(0, 0, ['Date' => [(string) $Date, '>=']]);
 		$this->broadcastEvent('Chat::GetPosts', $aPosts);
 		return $aPosts;
+	}
+	
+	public function GetChannels()
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+		return $this->oApiChannelsManager->GetChannels();
 	}
 }

@@ -1,5 +1,10 @@
 <div class="screen Chat" style="display: none;">
 	<div class="panels">
+		<div class="panel left_panel channels_panel">
+			<div class="panel_content">
+				<!-- ko template: {name: '%ModuleName%_ChannelsListView'} --><!-- /ko -->
+			</div>
+		</div>
 		<div class="panel item_viewer">
 			<div class="panel_content">
 				<div class="middle_bar">
@@ -10,7 +15,7 @@
 									<a href="javascript: void()" data-bind="i18n: {'key': '%MODULENAME%/ACTION_LOAD_EARLIER_MESSAGES'}, click: showMore, visible: !gettingMore()"></a>
 									<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_LOAD_EARLIER_MESSAGES_IN_PROGRESS'}, visible: gettingMore"></span>
 								</div>
-								<!-- ko foreach: posts -->
+								<!-- ko foreach: currentChannelPosts -->
 								<div class="post" data-bind="css: {'own-post': isOwn}">
 									<div>
 										<span class="name" data-bind="text: name"></span>

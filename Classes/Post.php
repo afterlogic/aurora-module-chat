@@ -21,9 +21,10 @@ namespace Aurora\Modules\Chat\Classes;
 class Post extends \Aurora\System\EAV\Entity
 {
 	protected $aStaticMap = array(
-		'UserId'	=> array('int', 0),
-		'Text'		=> array('text', ''),
-		'Date'		=> array('datetime', ''),
-		'IsHtml'	=> array('bool', false)
+		'UserId'		=> array('int', 0),
+		'Text'			=> array('text', ''),
+		'Date'			=> array('datetime', ''),
+		'IsHtml'		=> array('bool', false),
+		'ChannelUUID'	=> array('string', ''),
 	);
 }

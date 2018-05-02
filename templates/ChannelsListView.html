@@ -1,0 +1,18 @@
+<div class="buttons big_single_button">
+	<span href="javascript: void(0)" class="button" id="selenium_new_channel_button" data-bind="command: bigButtonCommand">
+		<span class="icon"></span>
+		<span data-bind="i18n: {'key': '%MODULENAME%/CREATE_NEW_CHANNEL'}"></span>
+	</span>
+</div>
+
+<div class="middle_bar">
+	<div class="panel_center" data-bind="customScrollbar: {x: false}">
+		<div class="scroll-inner">
+			<div class="items_list collapsible">
+				<div class="folders">
+				<!-- ko template: {name: '%ModuleName%_ChannelView', foreach: channelList} --><!-- /ko -->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

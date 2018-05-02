@@ -5,7 +5,7 @@
  * For full statements of the licenses see LICENSE-AFTERLOGIC and LICENSE-AGPL3 files.
  */
 
-namespace Aurora\Modules\Chat;
+namespace Aurora\Modules\Chat\Managers;
 
 /**
  * CApiChatManager class summary
@@ -16,7 +16,7 @@ namespace Aurora\Modules\Chat;
  *
  * @package Chat
  */
-class Manager extends \Aurora\System\Managers\AbstractManager
+class Posts extends \Aurora\System\Managers\AbstractManager
 {
 	/**
 	 * @var \Aurora\System\Managers\Eav
@@ -62,7 +62,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 			$aResults = $this->oEavManager->getEntities(
 				$this->getModule()->getNamespace() . '\Classes\Post',
 				array(
-					'UserId', 'Text', 'Date', 'IsHtml'
+					'UserId', 'Text', 'Date', 'ChannelUUID', 'IsHtml'
 				),
 				$iOffset,
 				$iLimit,
@@ -95,6 +95,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 							'name' => $aUsers[$oItem->UserId],
 							'text' => $oItem->Text,
 							'date' => $oItem->Date,
+							'channelUUID' => $oItem->ChannelUUID,
 							'is_html' => $oItem->IsHtml
 						);
 					}
@@ -117,15 +118,16 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	 * @param string $sDate date of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($iUserId, $sText, $sDate, $IsHtml = false)
+	public function CreatePost($iUserId, $sText, $sDate, $ChannelUUID, $IsHtml = false)
 	{
 		$bResult = true;
 		try
 		{
-			$oNewPost = new Classes\Post($this->GetModule()->GetName());
+			$oNewPost = new \Aurora\Modules\Chat\Classes\Post($this->GetModule()->GetName());
 			$oNewPost->UserId = $iUserId;
 			$oNewPost->Text = $sText;
 			$oNewPost->Date = $sDate;
+			$oNewPost->ChannelUUID = $ChannelUUID;
 			$oNewPost->IsHtml = $IsHtml;
 			if (!$this->oEavManager->saveEntity($oNewPost))
 			{
