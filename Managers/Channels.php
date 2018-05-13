@@ -55,7 +55,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		{
 			$aUserChannels = $this->oEavManager->getEntities(
 				$this->getModule()->getNamespace() . '\Classes\ChannelUser',
-				['ChannelUUID'],
+				['ChannelUUID', 'Name'],
 				0,
 				0,
 				['UserUUID' => $UserUUID]
@@ -71,10 +71,10 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		return $aResult;
 	}
 
-	public function GetChannelByIdOrUID($mIdOrUUID)
+	public function GetChannelByIdOrUUID($mIdOrUUID)
 	{
 		$mChannel = false;
-		if ($mIdOrUUID)
+		if (is_string($mIdOrUUID))
 		{
 			$mChannel = $this->oEavManager->getEntity($mIdOrUUID, $this->getModule()->getNamespace() . '\Classes\Channel');
 		}
@@ -113,32 +113,38 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		{
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::ChannelCreateFailed);
 		}
-//		$this->AddUserToChannel($iChannelId, $UserUUID);
-//		$oCoreDecorator = \Aurora\System\Api::GetModuleDecorator('Core');
-//		foreach ($aMembers as $sPublicId)
-//		{
-//			$oUser = $oCoreDecorator->GetUserByPublicId($sPublicId);
-//			if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
-//			{
-//				$this->AddUserToChannel($iChannelId, $oUser->UUID);
-//			}
-//		}
+
 		return $mResult;
 	}
 
-	public function AddUserToChannel($iChannelId, $UserUUID)
+	public function AddUserToChannel($mChannelIdOrUUID, $UserUUID)
 	{
 		$bResult = false;
-		if (!$iChannelId || empty($UserUUID) || !is_string($UserUUID))
+		if (!$mChannelIdOrUUID || empty($UserUUID) || !is_string($UserUUID))
 		{
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
 		}
-		$oChannel = $this->GetChannelByIdOrUID($iChannelId);
+		$aUserChannels = $this->GetUserChannels($UserUUID);
+		$oChannel = $this->GetChannelByIdOrUUID($mChannelIdOrUUID);
+		if (!$oChannel instanceof \Aurora\Modules\Chat\Classes\Channel)
+		{
+			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
+		}
+		foreach ($aUserChannels as $oUserChannel)
+		{
+			if ($oChannel->UID === $oUserChannel->UUID)
+			{
+				throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::ChannelUserAlreadyInChannel);
+			}
+		}
 		if ($oChannel instanceof \Aurora\Modules\Chat\Classes\Channel)
 		{
 			$oNewChannelUser = new \Aurora\Modules\Chat\Classes\ChannelUser($this->GetModule()->GetName());
 			$oNewChannelUser->ChannelUUID = $oChannel->UUID;
 			$oNewChannelUser->UserUUID = $UserUUID;
+			$oDate = new \DateTime();
+			$oDate->setTimezone(new \DateTimeZone('UTC'));
+			$oNewChannelUser->Date = $oDate->format('Y-m-d H:i:s');
 			$bResult = $this->oEavManager->saveEntity($oNewChannelUser);
 			if (!$bResult)
 			{

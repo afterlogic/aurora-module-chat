@@ -35,18 +35,6 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	}
 	
 	/**
-	 * Obtains count of all posts.
-	 * 
-	 * @return int
-	 */
-	public function GetPostsCount()
-	{
-		return $this->oEavManager->getEntitiesCount(
-			$this->getModule()->getNamespace() . '\Classes\Post', array()
-		);
-	}
-	
-	/**
 	 * Obtains posts of Chat Module.
 	 * 
 	 * @param int $iOffset uses for obtaining a partial list.
@@ -140,5 +128,24 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 			$this->setLastException($oException);
 		}
 		return $bResult;
+	}
+	
+	/**
+	 * Obtains count of posts in channel.
+	 * 
+	 * @return int
+	 */
+	public function GetChannelPostsCount($ChannelUUID)
+	{
+		$iResult = 0;
+		if (is_string($ChannelUUID))
+		{
+			$iResult = (int) $this->oEavManager->getEntitiesCount(
+				$this->getModule()->getNamespace() . '\Classes\Post',
+				['ChannelUUID' => $ChannelUUID]
+			);
+		}
+
+		return $iResult;
 	}
 }

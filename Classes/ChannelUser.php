@@ -23,6 +23,7 @@ class ChannelUser extends \Aurora\System\EAV\Entity
 {
 	protected $aStaticMap = array(
 		'UserUUID'		=> array('string', ''),
-		'ChannelUUID'	=> array('string', '')
+		'ChannelUUID'	=> array('string', ''),
+		'Date'			=> array('datetime', ''),
 	);
 }

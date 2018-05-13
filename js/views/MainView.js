@@ -18,7 +18,8 @@ var
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js'),
 	PostCheck = require('modules/%ModuleName%/js/PostCheck.js'),
-	CreateChannelPopup = require('modules/%ModuleName%/js/popups/CreateChannelPopup.js')
+	CreateChannelPopup = require('modules/%ModuleName%/js/popups/CreateChannelPopup.js'),
+	AddUserPopup = require('modules/%ModuleName%/js/popups/AddUserPopup.js')
 ;
 
 /**
@@ -36,13 +37,10 @@ function CChatView()
 	this.browserTitle = ko.observable(TextUtils.i18n('%MODULENAME%/HEADING_BROWSER_TAB'));
 	
 	this.bAllowReply = (App.getUserRole() === Enums.UserRole.NormalUser);
-	
-	this.posts = ko.observableArray([]);
+	this.channels = ko.observableArray([]);
 	this.gettingMore = ko.observable(false);
-	this.offset = ko.observable(0);
 	this.postsPerPage = 10;
 	// Quick Reply Part
-	
 	this.domQuickReply = ko.observable(null);
 	this.replyText = ko.observable('');
 	this.replyTextFocus = ko.observable(false);
@@ -75,18 +73,19 @@ function CChatView()
 	this.replyTextFocus.subscribe(function () {
 		this.scrollIfNecessary(500);
 	}, this);
-	this.postsOnPage = ko.observable(this.postsPerPage);
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
-	this.IsCheckStarted = ko.observable(false);
 	this.bigButtonCommand = Utils.createCommand(this, function () {
-		Popups.showPopup(CreateChannelPopup, []);
+		Popups.showPopup(CreateChannelPopup, [_.bind(function () { this.getChannels(); }, this)]);
 	});
-	this.channelList = ko.observableArray([]);
+	this.addUserCommand = Utils.createCommand(this, this.addUser);
 	this.selectedChannel = ko.observable(null);
-	this.currentChannelPosts = ko.observableArray([]);
-//	this.selectedChannel.subscribe(function () {
-//		this.setCurrentChannelPosts();
-//	}, this);
+	this.currentChannelPosts = ko.computed(function () {
+		if (this.selectedChannel())
+		{
+			return this.selectedChannel().PostsCollection();
+		}
+		return [];
+	}, this);
 }
 
 _.extendOwn(CChatView.prototype, CAbstractScreenView.prototype);
@@ -123,18 +122,24 @@ CChatView.prototype.onShow = function ()
 	//After showing chat tab we stopping service which checking for new posts
 	PostCheck.stopCheck();
 	HeaderItemView.isUnseen(false);
-	if (this.posts().length === 0)
+
+	if (this.channels().length <= 0)
 	{
-		Ajax.send('GetPostsCount', null, function (oResponse) {
-			var iCount = Types.pInt(oResponse && oResponse.Result);
-			if (iCount > 10)
+		Ajax.send('GetUserChannelsWithPosts',
 			{
-				this.offset(iCount - 10);
-			}
-			this.getPosts(/*bStartPostsCheck*/true);
-		}, this);
+				'Limit': this.postsPerPage
+			},
+			function (oResponse) {
+				if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
+				{
+					this.initChannelPosts(oResponse.Result.Collection);
+				}
+				this.getLastPosts();
+			},
+			this
+		);
 	}
-	this.getChannels();
+//	this.getChannels();
 };
 
 /**
@@ -142,37 +147,33 @@ CChatView.prototype.onShow = function ()
  */
 CChatView.prototype.showMore = function ()
 {
-	if (this.offset() > 0)
+	if (this.selectedChannel().Offset() > 0)
 	{
 		this.gettingMore(true);
 	}
-	this.offset((this.offset() >= this.postsPerPage) ? this.offset() - this.postsPerPage : 0);
-	this.postsOnPage(this.postsOnPage() + this.postsPerPage);
-	this.getPosts();
-};
-
-/**
- * Requests posts from the server with given offset and very big limit.
- * @param {boolean} bStartPostsCheck Indicates that process which checking for new posts would be started after getting posts 
- */
-CChatView.prototype.getPosts = function (bStartPostsCheck)
-{
-	//Start checking of new posts after getting response for "getPosts" request
-	Ajax.send('GetPosts', {Offset: this.offset(), Limit: 10},
-		_.bind(function (oResponse, oRequest) {
-			this.onGetPostsResponse(oResponse, oRequest);
-			if (bStartPostsCheck === true && !this.IsCheckStarted())
-			{
-				this.getLastPosts();
-				this.IsCheckStarted(true);
-			}
-		}, this),
-		this);
+	this.selectedChannel().Offset((this.selectedChannel().Offset() >= this.postsPerPage) ? this.selectedChannel().Offset() - this.postsPerPage : 0);
+	this.selectedChannel().PostsOnPage(this.selectedChannel().PostsOnPage() + this.postsPerPage);
+	this.getPreviousPosts();
 };
 
 CChatView.prototype.getLastPosts = function ()
 {
 	Ajax.send('GetLastPosts', {'IsUpdateLastShowPostsDate':HeaderItemView.isCurrent()}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
+};
+
+CChatView.prototype.getPreviousPosts = function ()
+{
+	var $aOffsets = {};
+
+	$aOffsets[this.selectedChannel().UUID] = this.selectedChannel().Offset();
+
+	Ajax.send('GetPosts', {
+			Offsets: $aOffsets,
+			Limit: this.selectedChannel().Offset() > 0 ? this.postsPerPage : this.selectedChannel().PostsCount() % this.postsPerPage,
+			ChannelUUID: this.selectedChannel().UUID
+		},
+		this.onGetPreviousPostsResponse,
+		this);
 };
 
 /**
@@ -185,79 +186,44 @@ CChatView.prototype.getLastPosts = function ()
  */
 CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 {
+	var oCahnnel = this.getChannelByUUID(oPost.channelUUID);
+
 	oPost.displayDate = this.getDisplayDate(moment.utc(oPost.date));
 	oPost.displayText = oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text);
 	oPost.isOwn = bOwn;
 
 	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Own': bOwn});
 
-	if (bEnd)
+	if (oCahnnel && oCahnnel.PostsCollection)
 	{
-		this.getPostsByChannelObservable(oPost.channelUUID).push(oPost);
-	}
-	else
-	{
-		this.getPostsByChannelObservable(oPost.channelUUID).unshift(oPost);
+		if (bEnd)
+		{
+			oCahnnel.PostsCollection.push(oPost);
+		}
+		else
+		{
+			oCahnnel.PostsCollection.unshift(oPost);
+		}
 	}
 };
 
-/**
- * Posts request callback. Parses server response with posts. Adds new posts to the end or begining of the posts array.
- * 
- * @param {Object} oResponse Object with data from server.
- * @param {Object} oRequest Object with parameters wich were used for request to the server.
- */
-CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
+CChatView.prototype.onGetPreviousPostsResponse = function (oResponse, oRequest)
 {
 	if (oResponse.Result && Types.isNonEmptyArray(oResponse.Result.Collection))
 	{
 		var
-			aPosts = oResponse.Result.Collection
+			aPosts = oResponse.Result.Collection,
+			iLastIndex = aPosts.length - 1
 		;
-//		if (this.posts().length === 0)
-//		{
-//			_.each(aPosts, _.bind(function (oPost) {
-//				this.addPost(oPost, true, oPost.userId === App.getUserId());
-//			}, this));
-//			this.scrollIfNecessary(500);
-//		}
-//		else
-//		{
-			_.each(this.channelList(), _.bind(function (oChannel) {
-				this.removeOwnPosts(oChannel.UUID);
-			},this));
-			
-			var
-				iFirstIndex = 0,
-				iLastIndex = aPosts.length - 1
-			;
-			
-			if (typeof oResponse.Result.Offset !== 'undefined')
-			{
-				/**
-				* Adds all new posts to the beginning of the post list.
-				*/
-				for (var iIndex = iLastIndex; iIndex >= 0; iIndex--)
-				{
-					this.addPost(aPosts[iIndex], false, aPosts[iIndex].userId === App.getUserId());
-				}
-			}
-			else
-			{
-				/**
-				 * Adds all new posts to the end of the post list.
-				 */
-				for (var iIndex = iFirstIndex; iIndex < aPosts.length; iIndex++)
-				{
-					this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId === App.getUserId());
-				}
-				this.scrollIfNecessary(500);
-			}
-//		}
-		_.each(this.channelList(), _.bind(function (oChannel) {
-			this.removeExtraPosts(oChannel.UUID);
-		},this));
-		this.setCurrentChannelPosts();
+
+		/**
+		* Adds all new posts to the beginning of the post list.
+		*/
+		for (var iIndex = iLastIndex; iIndex >= 0; iIndex--)
+		{
+			this.addPost(aPosts[iIndex], false, aPosts[iIndex].userId === App.getUserId());
+		}
+
 		if (!HeaderItemView.isCurrent())
 		{
 			HeaderItemView.isUnseen(true);
@@ -269,13 +235,13 @@ CChatView.prototype.onGetPostsResponse = function (oResponse, oRequest)
 /**
  * Removes recent own posts that were added between posts requests.
  */
-CChatView.prototype.removeOwnPosts = function (ChannelUUID)
+CChatView.prototype.removeOwnPosts = function (oChannel)
 {
-	for (var i = 0; i < this.getPostsByChannel(ChannelUUID).length; i++)
+	for (var i = 0; i < oChannel.PostsCollection().length; i++)
 	{
-		if (this.getPostsByChannel(ChannelUUID)[i].recent)
+		if (oChannel.PostsCollection()[i].recent)
 		{
-			this.getPostsByChannelObservable(ChannelUUID).remove(this.getPostsByChannel(ChannelUUID)[i]);
+			oChannel.PostsCollection.remove(oChannel.PostsCollection()[i]);
 		}
 	}
 };
@@ -294,11 +260,11 @@ CChatView.prototype.getDisplayDate = function (oMomentUtc)
 	
 	if (oNow.diff(oLocal, 'days') === 0)
 	{
-		return oLocal.format('HH:mm:ss');
+		return oLocal.format('HH:mm');
 	}
 	else
 	{
-		return oLocal.format('MMM Do HH:mm:ss');
+		return oLocal.format('MMM Do HH:mm');
 	}
 };
 
@@ -312,14 +278,14 @@ CChatView.prototype.sendPost = function ()
 	if (this.bAllowReply && $.trim(this.replyText()) !== '')
 	{
 		var sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss');
-		Ajax.send('CreatePost', {'Text': this.replyText(), 'ChannelUUID': this.selectedChannelUUID()}, false, this);
+		Ajax.send('CreatePost', {'Text': this.replyText(), 'ChannelUUID': this.selectedChannel().UUID}, false, this);
 		this.addPost({
 				userId: App.getUserId(),
 				name: App.getUserPublicId(),
 				text: this.replyText(),
 				date: sDate,
 				recent: true,
-				channelUUID: this.selectedChannelUUID()
+				channelUUID: this.selectedChannel().UUID
 			},
 			true,
 			true
@@ -331,19 +297,55 @@ CChatView.prototype.sendPost = function ()
 
 CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 {
-	this.onGetPostsResponse(oResponse, oRequest);
+	if (oResponse.Result && Types.isNonEmptyArray(oResponse.Result.Collection))
+	{
+		var
+			aPosts = oResponse.Result.Collection,
+			iFirstIndex = 0
+		;
+		_.each(this.channels(), _.bind(function (oChannel) {
+				this.removeOwnPosts(oChannel);
+			},this));
+		/**
+		 * Adds all new posts to the end of the post list.
+		 */
+		for (var iIndex = iFirstIndex; iIndex < aPosts.length; iIndex++)
+		{
+			this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId === App.getUserId());
+		}
+		this.scrollIfNecessary(500);
+
+		_.each(this.channels(), _.bind(function (oChannel) {
+			this.removeExtraPosts(oChannel.UUID);
+		},this));
+		if (!HeaderItemView.isCurrent())
+		{
+			HeaderItemView.isUnseen(true);
+		}
+	}
+	this.gettingMore(false);
 	setTimeout(_.bind(this.getLastPosts, this),1000);
 };
 
+/**
+ * Hide posts if it's count bigger then postsPerPage + offset 
+ * @param {type} ChannelUUID
+ * @returns {undefined}
+ */
 CChatView.prototype.removeExtraPosts = function (ChannelUUID)
 {
-	var iNumberOfExtraPosts = this.getPostsByChannel(ChannelUUID).length - this.postsOnPage();
+	var
+		oChannel = this.getChannelByUUID(ChannelUUID),
+		iNumberOfExtraPosts = oChannel.PostsCollection().length - oChannel.PostsOnPage()
+	;
+
 	if (iNumberOfExtraPosts > 0)
 	{
 		for (var i = 0; i < iNumberOfExtraPosts; i++)
 		{
-			this.getPostsByChannelObservable(ChannelUUID).remove(this.getPostsByChannel(ChannelUUID)[i]);
+			oChannel.PostsCollection.remove(oChannel.PostsCollection()[i]);
 		}
+		oChannel.Offset(Types.pInt(oChannel.Offset()) + iNumberOfExtraPosts);
 	}
 };
 
@@ -352,54 +354,46 @@ CChatView.prototype.setTextFocus = function ()
 	$('#reply_text').focus();
 };
 
-CChatView.prototype.getChannels = function ()
+CChatView.prototype.showChannel = function (UUID)
 {
-//	Ajax.send('GetUserChannels', null, this.onGetChannelsResponse, this);
-	Ajax.send('GetChannels', null, this.onGetChannelsResponse, this);
+	this.selectedChannel(this.getChannelByUUID(UUID));
 };
 
-CChatView.prototype.onGetChannelsResponse = function (oResponse)
+CChatView.prototype.initChannelPosts = function (oChannelData)
 {
-	if (oResponse.Result)
+	for (var ChannelUUID in oChannelData)
 	{
-		this.channelList(oResponse.Result);
-		if (this.channelList().length > 0)
+		this.channels.push({
+			'Offset': ko.observable(oChannelData[ChannelUUID]['PostCount'] > this.postsPerPage ? oChannelData[ChannelUUID]['PostCount'] - this.postsPerPage : 0),
+			'PostsCount': ko.observable(oChannelData[ChannelUUID]['PostCount']),
+			'Name': oChannelData[ChannelUUID]['Name'],
+			'PostsOnPage': ko.observable(this.postsPerPage),
+			'PostsCollection': ko.observableArray([]),
+			'UUID': ChannelUUID
+		});
+		_.each(oChannelData[ChannelUUID]['PostsCollection'], _.bind(function (oPost) {
+			this.addPost(oPost, true, oPost.userId === App.getUserId());
+		}, this));
+		if (!this.selectedChannel())
 		{
-			this.selectedChannel(this.channelList()[0]);
-			_.each(this.channelList(), _.bind(function (oChannel) {
-				this.posts()[oChannel.UUID] = ko.observableArray([]);
-			},this));
+			this.selectedChannel(this.getChannelByUUID(ChannelUUID));
 		}
 	}
 };
 
-CChatView.prototype.selectedChannelUUID = function ()
+CChatView.prototype.addUser = function ()
 {
-	return this.selectedChannel() ? this.selectedChannel().UUID : '';
+	Popups.showPopup(AddUserPopup, [
+		_.bind(function () { console.log("addUser"); }, this),
+		this.selectedChannel().UUID
+	]);
 };
 
-CChatView.prototype.showChannel = function (UUID)
+CChatView.prototype.getChannelByUUID = function (UUID)
 {
-	var oChannel = _.find(this.channelList(), function(oChannel){
+	return _.find(this.channels(), function(oChannel){
 		return oChannel.UUID === UUID; 
 	});
-	this.selectedChannel(oChannel);
-	this.setCurrentChannelPosts();
-};
-
-CChatView.prototype.getPostsByChannelObservable = function (UUID)
-{
-	return (this.posts()[UUID]) ? this.posts()[UUID] : null;
-};
-
-CChatView.prototype.getPostsByChannel = function (UUID)
-{
-	return (this.posts()[UUID]()) ? this.posts()[UUID]() : [];
-};
-
-CChatView.prototype.setCurrentChannelPosts = function ()
-{
-	this.currentChannelPosts(this.getPostsByChannel(this.selectedChannelUUID()));
 };
 
 module.exports = new CChatView();

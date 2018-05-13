@@ -16,14 +16,14 @@ namespace Aurora\Modules\Chat;
  */
 class Module extends \Aurora\System\Module\AbstractModule
 {
-	public $oApiChatManager = null;
+	public $oApiPostsManager = null;
 	public $oApiChannelsManager = null;
-	
+
 	public function init() 
 	{
-		$this->oApiChatManager = new Managers\Posts($this);
+		$this->oApiPostsManager = new Managers\Posts($this);
 		$this->oApiChannelsManager = new Managers\Channels($this);
-		
+
 		$this->extendObject(
 			'Aurora\Modules\Core\Classes\User', 
 			[
@@ -32,7 +32,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			]
 		);
 	}
-	
+
 	/**
 	 * Obtains list of module settings for authenticated user.
 	 * 
@@ -47,10 +47,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 				'EnableModule' => $oUser->{$this->GetName().'::EnableModule'}
 			);
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Updates settings of the Chat Module.
 	 * 
@@ -71,14 +71,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		return true;
 	}
-	
-	public function GetPostsCount()
-	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-		
-		return $this->oApiChatManager->GetPostsCount();
-	}
-	
+
 	/**
 	 * Obtains posts of Chat Module.
 	 * 
@@ -86,17 +79,32 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 * @param int $Limit uses for obtaining a partial list.
 	 * @return array
 	 */
-	public function GetPosts($Offset, $Limit)
+	public function GetPosts($Offsets, $Limit, $ChannelUUID = null)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-		
-		$aPosts = $this->oApiChatManager->GetPosts($Offset, $Limit);
+		$aPosts = [];
+		$aUserChannels = $this->GetUserChannels();
+
+		foreach ($aUserChannels as $oChannel)
+		{
+			if ((isset($ChannelUUID) && $oChannel->UUID === $ChannelUUID) || !isset($ChannelUUID))
+			{
+				$iOffset = isset($Offsets[$oChannel->UUID]) ? $Offsets[$oChannel->UUID] : 0;
+				$aPosts = array_merge(
+					$aPosts,
+					$this->oApiPostsManager->GetPosts(
+						$iOffset,
+						$Limit,
+						['ChannelUUID' =>$oChannel->UUID]
+					)
+				);
+			}
+		}
 		$this->broadcastEvent('Chat::GetPosts', $aPosts);
-		return array(
-			'Offset' => $Offset,
+		return [
 			'Limit' => $Limit,
 			'Collection' => $aPosts
-		);
+		];
 	}
 
 	/**
@@ -108,15 +116,15 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function CreatePost($Text, $ChannelUUID)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-		
+
 		$iUserId = \Aurora\System\Api::getAuthenticatedUserId();
 		$oDate = new \DateTime();
 		$oDate->setTimezone(new \DateTimeZone('UTC'));
 		$sDate = $oDate->format('Y-m-d H:i:s');
-		$this->oApiChatManager->CreatePost($iUserId, $Text, $sDate, $ChannelUUID);
+		$this->oApiPostsManager->CreatePost($iUserId, $Text, $sDate, $ChannelUUID);
 		return true;
 	}
-	
+
 	public function GetLastPosts($IsUpdateLastShowPostsDate = false)
 	{
 		$mResult = false;
@@ -150,7 +158,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		return $mResult;
 	}
-	
+
 	public function IsHaveUnseen()
 	{
 		$bResult = false;
@@ -165,7 +173,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		return $bResult;
 	}
-	
+
 	public function CreateChannel($Name)
 	{
 		$bResult = false;
@@ -182,7 +190,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		return $bResult;
 	}
-	
+
 	public function GetUserChannels()
 	{
 		$aResult = [];
@@ -197,19 +205,52 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		return $aResult;
 	}
-	
+
 	protected function getPostsByDate($Date)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-		
-		$aPosts = $this->oApiChatManager->GetPosts(0, 0, ['Date' => [(string) $Date, '>=']]);
+
+		$aPosts = $this->oApiPostsManager->GetPosts(0, 0, ['Date' => [(string) $Date, '>=']]);
 		$this->broadcastEvent('Chat::GetPosts', $aPosts);
 		return $aPosts;
 	}
+
+	public function GetUserChannelsWithPosts($Limit)
+	{
+		$aResult = [];
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		{
+			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+			foreach ($aChannelsUUIDs as $ChanneUUID)
+			{
+				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChanneUUID);
+				$iPostsCount = $this->oApiPostsManager->GetChannelPostsCount($oChannel->UUID);
+				$aResult[$oChannel->UUID]['PostCount'] = $iPostsCount;
+				$aResult[$oChannel->UUID]['PostsCollection'] = $this->oApiPostsManager->GetPosts(
+					($iPostsCount - $Limit) > 0 ? $iPostsCount - $Limit : 0,
+					$Limit,
+					['ChannelUUID' => $oChannel->UUID]
+				);
+				$aResult[$oChannel->UUID]['Name'] = $oChannel->Name;
+			}
+		}
+		return [
+			'Collection' => $aResult
+		];
+	}
 	
-	public function GetChannels()
+	public function AddUserToChannel($ChannelUUID, $UserPublicId)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-		return $this->oApiChannelsManager->GetChannels();
+
+		$bResult = false;
+		$oUser = \Aurora\Modules\Core\Module::Decorator()->GetUserByPublicId($UserPublicId);
+		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+		{
+			$bResult = !!$this->oApiChannelsManager->AddUserToChannel($ChannelUUID, $oUser->UUID);
+		}
+
+		return $bResult;
 	}
 }

@@ -21,11 +21,17 @@ function CCreateChannelPopup()
 	this.channelName.subscribe(function () {
 		this.errorMessage('');
 	}, this);
+	this.fOnCreateCallback = null;
 }
 
 _.extendOwn(CCreateChannelPopup.prototype, CAbstractPopup.prototype);
 
 CCreateChannelPopup.prototype.PopupTemplate = '%ModuleName%_CreateChannelPopup';
+
+CCreateChannelPopup.prototype.onOpen = function (fOnCreateCallback)
+{
+	this.fOnCreateCallback = fOnCreateCallback;
+};
 
 CCreateChannelPopup.prototype.createChannel = function ()
 {
@@ -57,11 +63,13 @@ CCreateChannelPopup.prototype.onChannelCreateResponse = function (oResponse)
 
 	if (oResult)
 	{
-		
+		if(_.isFunction(this.fOnCreateCallback))
+		{
+			this.fOnCreateCallback();//update channels list
+		}
 	}
 	this.closePopup();
 	this.errorMessage('');
-	//update channels list
 };
 
 module.exports = new CCreateChannelPopup();
