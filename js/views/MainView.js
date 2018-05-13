@@ -129,17 +129,19 @@ CChatView.prototype.onShow = function ()
 			{
 				'Limit': this.postsPerPage
 			},
-			function (oResponse) {
-				if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
-				{
-					this.initChannelPosts(oResponse.Result.Collection);
-				}
-				this.getLastPosts();
-			},
+			this.onGetUserChannelsWithPostsResponse,
 			this
 		);
 	}
-//	this.getChannels();
+};
+
+CChatView.prototype.onGetUserChannelsWithPostsResponse = function (oResponse, oRequest)
+{
+	if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
+	{
+		this.initChannelsData(oResponse.Result.Collection);
+	}
+	this.getLastPosts();
 };
 
 /**
@@ -304,8 +306,8 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 			iFirstIndex = 0
 		;
 		_.each(this.channels(), _.bind(function (oChannel) {
-				this.removeOwnPosts(oChannel);
-			},this));
+			this.removeOwnPosts(oChannel);
+		},this));
 		/**
 		 * Adds all new posts to the end of the post list.
 		 */
@@ -359,21 +361,11 @@ CChatView.prototype.showChannel = function (UUID)
 	this.selectedChannel(this.getChannelByUUID(UUID));
 };
 
-CChatView.prototype.initChannelPosts = function (oChannelData)
+CChatView.prototype.initChannelsData = function (oChannelsData)
 {
-	for (var ChannelUUID in oChannelData)
+	for (var ChannelUUID in oChannelsData)
 	{
-		this.channels.push({
-			'Offset': ko.observable(oChannelData[ChannelUUID]['PostCount'] > this.postsPerPage ? oChannelData[ChannelUUID]['PostCount'] - this.postsPerPage : 0),
-			'PostsCount': ko.observable(oChannelData[ChannelUUID]['PostCount']),
-			'Name': oChannelData[ChannelUUID]['Name'],
-			'PostsOnPage': ko.observable(this.postsPerPage),
-			'PostsCollection': ko.observableArray([]),
-			'UUID': ChannelUUID
-		});
-		_.each(oChannelData[ChannelUUID]['PostsCollection'], _.bind(function (oPost) {
-			this.addPost(oPost, true, oPost.userId === App.getUserId());
-		}, this));
+		this.addChannelToList(ChannelUUID, oChannelsData[ChannelUUID]);
 		if (!this.selectedChannel())
 		{
 			this.selectedChannel(this.getChannelByUUID(ChannelUUID));
@@ -384,7 +376,7 @@ CChatView.prototype.initChannelPosts = function (oChannelData)
 CChatView.prototype.addUser = function ()
 {
 	Popups.showPopup(AddUserPopup, [
-		_.bind(function () { console.log("addUser"); }, this),
+		_.bind(function () { }, this),
 		this.selectedChannel().UUID
 	]);
 };
@@ -394,6 +386,47 @@ CChatView.prototype.getChannelByUUID = function (UUID)
 	return _.find(this.channels(), function(oChannel){
 		return oChannel.UUID === UUID; 
 	});
+};
+
+CChatView.prototype.getChannels = function ()
+{
+	Ajax.send('GetUserChannelsWithPosts',
+		{
+			'Limit': this.postsPerPage
+		},
+		this.onGetChannelsResponse,
+		this
+	);
+};
+
+CChatView.prototype.onGetChannelsResponse = function (oResponse, oRequest)
+{
+	if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
+	{
+		for (var ChannelUUID in oResponse.Result.Collection)
+		{
+			if (!this.getChannelByUUID(ChannelUUID))
+			{
+				//add new chennel
+				this.addChannelToList(ChannelUUID, oResponse.Result.Collection[ChannelUUID]);
+			}
+		}
+	}
+};
+
+CChatView.prototype.addChannelToList = function (ChannelUUID, oChannelData)
+{
+	this.channels.push({
+		'Offset': ko.observable(oChannelData['PostCount'] > this.postsPerPage ? oChannelData['PostCount'] - this.postsPerPage : 0),
+		'PostsCount': ko.observable(oChannelData['PostCount']),
+		'Name': oChannelData['Name'],
+		'PostsOnPage': ko.observable(this.postsPerPage),
+		'PostsCollection': ko.observableArray([]),
+		'UUID': ChannelUUID
+	});
+	_.each(oChannelData['PostsCollection'], _.bind(function (oPost) {
+		this.addPost(oPost, true, oPost.userId === App.getUserId());
+	}, this));
 };
 
 module.exports = new CChatView();

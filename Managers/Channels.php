@@ -45,6 +45,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 	}
 
 	/**
+	 * Return UUIDs of User's channels
 	 * @param string $UserUUID
 	 * @return array
 	 */
@@ -55,7 +56,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		{
 			$aUserChannels = $this->oEavManager->getEntities(
 				$this->getModule()->getNamespace() . '\Classes\ChannelUser',
-				['ChannelUUID', 'Name'],
+				['ChannelUUID'],
 				0,
 				0,
 				['UserUUID' => $UserUUID]
@@ -74,7 +75,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 	public function GetChannelByIdOrUUID($mIdOrUUID)
 	{
 		$mChannel = false;
-		if (is_string($mIdOrUUID))
+		if ($mIdOrUUID)
 		{
 			$mChannel = $this->oEavManager->getEntity($mIdOrUUID, $this->getModule()->getNamespace() . '\Classes\Channel');
 		}
@@ -124,15 +125,15 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		{
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
 		}
-		$aUserChannels = $this->GetUserChannels($UserUUID);
+		$aUserChannelsUUIDs = $this->GetUserChannels($UserUUID);
 		$oChannel = $this->GetChannelByIdOrUUID($mChannelIdOrUUID);
 		if (!$oChannel instanceof \Aurora\Modules\Chat\Classes\Channel)
 		{
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
 		}
-		foreach ($aUserChannels as $oUserChannel)
+		foreach ($aUserChannelsUUIDs as $UserChannelUUID)
 		{
-			if ($oChannel->UID === $oUserChannel->UUID)
+			if ($oChannel->UID === $UserChannelUUID)
 			{
 				throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::ChannelUserAlreadyInChannel);
 			}

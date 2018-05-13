@@ -65,9 +65,10 @@ CCreateChannelPopup.prototype.onChannelCreateResponse = function (oResponse)
 	{
 		if(_.isFunction(this.fOnCreateCallback))
 		{
-			this.fOnCreateCallback();//update channels list
+			this.fOnCreateCallback();
 		}
 	}
+	this.channelName('');
 	this.closePopup();
 	this.errorMessage('');
 };
