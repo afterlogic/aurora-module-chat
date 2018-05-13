@@ -221,10 +221,24 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
+			$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
 			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
 			foreach ($aChannelsUUIDs as $ChanneUUID)
 			{
 				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChanneUUID);
+				$aChannelUsersUUIDs = $this->oApiChannelsManager->GetChannelUsers($oChannel->UUID);
+				$aChannelUsers = [];
+				foreach ($aChannelUsersUUIDs as $UserUUID)
+				{
+					$oUser = $oCoreDecorator->GetUserByUUID($UserUUID);
+					if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+					{
+						$aChannelUsers[] = [
+							'UUID' => $oUser->UUID,
+							'PublicId' => $oUser->PublicId
+						];
+					}
+				}
 				$iPostsCount = $this->oApiPostsManager->GetChannelPostsCount($oChannel->UUID);
 				$aResult[$oChannel->UUID]['PostCount'] = $iPostsCount;
 				$aResult[$oChannel->UUID]['PostsCollection'] = $this->oApiPostsManager->GetPosts(
@@ -233,6 +247,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 					['ChannelUUID' => $oChannel->UUID]
 				);
 				$aResult[$oChannel->UUID]['Name'] = $oChannel->Name;
+				$aResult[$oChannel->UUID]['UsersCollection'] = $aChannelUsers;
 			}
 		}
 		return [

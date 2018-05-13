@@ -5,4 +5,9 @@
 			<span class="text" data-bind="i18n: {'key': '%MODULENAME%/ACTION_ADD_USER'}"></span>
 		</span>
 	</span>
+	<ul class="inputosaurus-container" style="padding: 3px; width: auto;">
+	<!-- ko foreach: currentChannelUsers -->
+		<li class="address_capsule ui-draggable ui-draggable-handle"><span data-bind="text: PublicId"></span></li>
+	<!-- /ko -->
+	</ul>
 </div>

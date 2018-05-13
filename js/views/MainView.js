@@ -86,6 +86,13 @@ function CChatView()
 		}
 		return [];
 	}, this);
+	this.currentChannelUsers = ko.computed(function () {
+		if (this.selectedChannel())
+		{
+			return this.selectedChannel().UsersCollection();
+		}
+		return [];
+	}, this);
 }
 
 _.extendOwn(CChatView.prototype, CAbstractScreenView.prototype);
@@ -376,7 +383,27 @@ CChatView.prototype.initChannelsData = function (oChannelsData)
 CChatView.prototype.addUser = function ()
 {
 	Popups.showPopup(AddUserPopup, [
-		_.bind(function () { }, this),
+		//update user list after adding new user to channel
+		_.bind(function () {
+			Ajax.send('GetUserChannelsWithPosts',
+				{
+					'Limit': this.postsPerPage
+				},
+				_.bind(function(oResponse) {
+					if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
+					{
+						for (var ChannelUUID in oResponse.Result.Collection)
+						{
+							if (ChannelUUID === this.selectedChannel().UUID)
+							{
+								this.selectedChannel().UsersCollection(oResponse.Result.Collection[ChannelUUID]['UsersCollection']);
+							}
+						}
+					}
+				}, this),
+				this
+			);
+		}, this),
 		this.selectedChannel().UUID
 	]);
 };
@@ -422,6 +449,7 @@ CChatView.prototype.addChannelToList = function (ChannelUUID, oChannelData)
 		'Name': oChannelData['Name'],
 		'PostsOnPage': ko.observable(this.postsPerPage),
 		'PostsCollection': ko.observableArray([]),
+		'UsersCollection': ko.observableArray(oChannelData['UsersCollection']),
 		'UUID': ChannelUUID
 	});
 	_.each(oChannelData['PostsCollection'], _.bind(function (oPost) {

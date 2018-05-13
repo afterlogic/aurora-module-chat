@@ -72,6 +72,34 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		return $aResult;
 	}
 
+    /**
+     * Return  Channel users
+     * @param string $ChannelUUID
+     * @return array
+     */
+    public function GetChannelUsers($ChannelUUID)
+    {
+        $aResult = [];
+        if (!empty($ChannelUUID))
+        {
+            $aChannelUsers = $this->oEavManager->getEntities(
+                $this->getModule()->getNamespace() . '\Classes\ChannelUser',
+                ['UserUUID'],
+                0,
+                0,
+                ['ChannelUUID' => $ChannelUUID]
+            );
+            if (is_array($aChannelUsers) && !empty($aChannelUsers))
+            {
+                foreach ($aChannelUsers as $oChannelUser)
+                {
+                    $aResult[] = $oChannelUser->UserUUID;
+                }
+            }
+        }
+        return $aResult;
+    }
+
 	public function GetChannelByIdOrUUID($mIdOrUUID)
 	{
 		$mChannel = false;
