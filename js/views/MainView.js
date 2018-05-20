@@ -74,9 +74,7 @@ function CChatView()
 		this.scrollIfNecessary(500);
 	}, this);
 	App.broadcastEvent('%ModuleName%::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this});
-	this.bigButtonCommand = Utils.createCommand(this, function () {
-		Popups.showPopup(CreateChannelPopup, [_.bind(function () { this.getChannels(); }, this)]);
-	});
+	this.bigButtonCommand = Utils.createCommand(this, this.createChannel);
 	this.addUserCommand = Utils.createCommand(this, this.addUser);
 	this.selectedChannel = ko.observable(null);
 	this.currentChannelPosts = ko.computed(function () {
@@ -455,6 +453,16 @@ CChatView.prototype.addChannelToList = function (ChannelUUID, oChannelData)
 	_.each(oChannelData['PostsCollection'], _.bind(function (oPost) {
 		this.addPost(oPost, true, oPost.userId === App.getUserId());
 	}, this));
+};
+
+CChatView.prototype.createChannel = function ()
+{
+	var
+		fOnCreateChannelCallback = _.bind(function () {
+			this.getChannels(); 
+		}, this)
+	;
+	Popups.showPopup(CreateChannelPopup, [fOnCreateChannelCallback]);
 };
 
 module.exports = new CChatView();

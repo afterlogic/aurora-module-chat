@@ -100,6 +100,12 @@ class Channels extends \Aurora\System\Managers\AbstractManager
         return $aResult;
     }
 
+	/**
+	 * 
+	 * @param type $mIdOrUUID
+	 * @return \Aurora\Modules\Chat\Classes\Channel|bool
+	 * @throws \Aurora\System\Exceptions\BaseException
+	 */
 	public function GetChannelByIdOrUUID($mIdOrUUID)
 	{
 		$mChannel = false;

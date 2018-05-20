@@ -187,8 +187,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 			{
 				$bResult = !!$this->oApiChannelsManager->AddUserToChannel($iChannelId, $oUser->UUID);
 			}
+			if ($bResult)
+			{
+				$oNewChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($iChannelId);
+			}
 		}
-		return $bResult;
+		return $oNewChannel ? $oNewChannel->UUID : $bResult;
 	}
 
 	public function GetUserChannels()
@@ -226,28 +230,31 @@ class Module extends \Aurora\System\Module\AbstractModule
 			foreach ($aChannelsUUIDs as $ChanneUUID)
 			{
 				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChanneUUID);
-				$aChannelUsersUUIDs = $this->oApiChannelsManager->GetChannelUsers($oChannel->UUID);
-				$aChannelUsers = [];
-				foreach ($aChannelUsersUUIDs as $UserUUID)
+				if ($oChannel instanceof \Aurora\Modules\Chat\Classes\Channel)
 				{
-					$oUser = $oCoreDecorator->GetUserByUUID($UserUUID);
-					if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+					$aChannelUsersUUIDs = $this->oApiChannelsManager->GetChannelUsers($oChannel->UUID);
+					$aChannelUsers = [];
+					foreach ($aChannelUsersUUIDs as $UserUUID)
 					{
-						$aChannelUsers[] = [
-							'UUID' => $oUser->UUID,
-							'PublicId' => $oUser->PublicId
-						];
+						$oUser = $oCoreDecorator->GetUserByUUID($UserUUID);
+						if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+						{
+							$aChannelUsers[] = [
+								'UUID' => $oUser->UUID,
+								'PublicId' => $oUser->PublicId
+							];
+						}
 					}
+					$iPostsCount = $this->oApiPostsManager->GetChannelPostsCount($oChannel->UUID);
+					$aResult[$oChannel->UUID]['PostCount'] = $iPostsCount;
+					$aResult[$oChannel->UUID]['PostsCollection'] = $this->oApiPostsManager->GetPosts(
+						($iPostsCount - $Limit) > 0 ? $iPostsCount - $Limit : 0,
+						$Limit,
+						['ChannelUUID' => $oChannel->UUID]
+					);
+					$aResult[$oChannel->UUID]['Name'] = $oChannel->Name;
+					$aResult[$oChannel->UUID]['UsersCollection'] = $aChannelUsers;
 				}
-				$iPostsCount = $this->oApiPostsManager->GetChannelPostsCount($oChannel->UUID);
-				$aResult[$oChannel->UUID]['PostCount'] = $iPostsCount;
-				$aResult[$oChannel->UUID]['PostsCollection'] = $this->oApiPostsManager->GetPosts(
-					($iPostsCount - $Limit) > 0 ? $iPostsCount - $Limit : 0,
-					$Limit,
-					['ChannelUUID' => $oChannel->UUID]
-				);
-				$aResult[$oChannel->UUID]['Name'] = $oChannel->Name;
-				$aResult[$oChannel->UUID]['UsersCollection'] = $aChannelUsers;
 			}
 		}
 		return [

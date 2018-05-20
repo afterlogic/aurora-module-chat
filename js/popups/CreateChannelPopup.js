@@ -31,6 +31,8 @@ CCreateChannelPopup.prototype.PopupTemplate = '%ModuleName%_CreateChannelPopup';
 CCreateChannelPopup.prototype.onOpen = function (fOnCreateCallback)
 {
 	this.fOnCreateCallback = fOnCreateCallback;
+	this.channelName('');
+	this.errorMessage('');
 };
 
 CCreateChannelPopup.prototype.createChannel = function ()
@@ -40,7 +42,7 @@ CCreateChannelPopup.prototype.createChannel = function ()
 		Ajax.send(
 			'CreateChannel',
 			{
-				'Name': this.channelName()
+				'Name': this.channelName().trim()
 			},
 			this.onChannelCreateResponse, 
 			this
@@ -63,14 +65,45 @@ CCreateChannelPopup.prototype.onChannelCreateResponse = function (oResponse)
 
 	if (oResult)
 	{
+		this.addUserToChannel(oResult);
+	}
+	else
+	{
+		this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
+	}
+};
+
+CCreateChannelPopup.prototype.addUserToChannel = function (ChannelUUID)
+{
+	Ajax.send(
+		'AddUserToChannel',
+		{
+			'UserPublicId': this.channelName().trim(),
+			'ChannelUUID' : ChannelUUID
+		},
+		this.onAddUserToChannelResponse, 
+		this
+	);
+};
+
+CCreateChannelPopup.prototype.onAddUserToChannelResponse = function (oResponse)
+{
+	var oResult = oResponse.Result;
+
+	if (oResult)
+	{
 		if(_.isFunction(this.fOnCreateCallback))
 		{
 			this.fOnCreateCallback();
 		}
+		this.channelName('');
+		this.closePopup();
+		this.errorMessage('');
 	}
-	this.channelName('');
-	this.closePopup();
-	this.errorMessage('');
+	else
+	{
+		this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
+	}
 };
 
 module.exports = new CCreateChannelPopup();
