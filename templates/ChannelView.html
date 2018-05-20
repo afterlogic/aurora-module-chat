@@ -1,5 +1,6 @@
 <div class="item canSelect" data-bind="css: { 'selected': $parent.selectedChannel() && UUID === $parent.selectedChannel().UUID }">
-	<a class="title" href="javascript: void(0);" data-bind="click: function() {$parent.showChannel(UUID); }">
+	<a class="title channel_list_item" href="javascript: void(0);" data-bind="click: function() {$parent.showChannel(UUID); }">
+		<span class="edit" data-bind="click:  function() {$parent.editChannel(UUID); }">Edit</span>
 		<span class="name">
 			<span class="text animGoal" data-bind="text: Name"></span>
 		</span>

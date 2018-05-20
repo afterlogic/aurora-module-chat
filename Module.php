@@ -275,4 +275,22 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		return $bResult;
 	}
+	
+	public function RenameChannel($ChannelUUID, $Name)
+	{
+		$bResult = false;
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		{
+			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+			if (in_array($ChannelUUID, $aChannelsUUIDs))
+			{
+				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChannelUUID);
+				$oChannel->Name = $Name;
+				$bResult = $this->oApiChannelsManager->UpdateChannel($oChannel);
+			}
+		}
+		
+		return $bResult;
+	}
 }

@@ -19,7 +19,8 @@ var
 	HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js'),
 	PostCheck = require('modules/%ModuleName%/js/PostCheck.js'),
 	CreateChannelPopup = require('modules/%ModuleName%/js/popups/CreateChannelPopup.js'),
-	AddUserPopup = require('modules/%ModuleName%/js/popups/AddUserPopup.js')
+	AddUserPopup = require('modules/%ModuleName%/js/popups/AddUserPopup.js'),
+	RenameChannelPopup = require('modules/%ModuleName%/js/popups/RenameChannelPopup.js')
 ;
 
 /**
@@ -435,6 +436,11 @@ CChatView.prototype.onGetChannelsResponse = function (oResponse, oRequest)
 				//add new chennel
 				this.addChannelToList(ChannelUUID, oResponse.Result.Collection[ChannelUUID]);
 			}
+			else
+			{
+				//update Names
+				this.getChannelByUUID(ChannelUUID).Name(oResponse.Result.Collection[ChannelUUID].Name);
+			}
 		}
 	}
 };
@@ -444,7 +450,7 @@ CChatView.prototype.addChannelToList = function (ChannelUUID, oChannelData)
 	this.channels.push({
 		'Offset': ko.observable(oChannelData['PostCount'] > this.postsPerPage ? oChannelData['PostCount'] - this.postsPerPage : 0),
 		'PostsCount': ko.observable(oChannelData['PostCount']),
-		'Name': oChannelData['Name'],
+		'Name': ko.observable(oChannelData['Name']),
 		'PostsOnPage': ko.observable(this.postsPerPage),
 		'PostsCollection': ko.observableArray([]),
 		'UsersCollection': ko.observableArray(oChannelData['UsersCollection']),
@@ -463,6 +469,17 @@ CChatView.prototype.createChannel = function ()
 		}, this)
 	;
 	Popups.showPopup(CreateChannelPopup, [fOnCreateChannelCallback]);
+};
+
+CChatView.prototype.editChannel = function (ChannelUUID)
+{
+	var
+		oCahnnel = this.getChannelByUUID(ChannelUUID),
+		fOnRenameChannelCallback = _.bind(function () {
+			this.getChannels(); 
+		}, this)
+	;
+	Popups.showPopup(RenameChannelPopup, [oCahnnel.UUID, oCahnnel.Name(), fOnRenameChannelCallback]);
 };
 
 module.exports = new CChatView();

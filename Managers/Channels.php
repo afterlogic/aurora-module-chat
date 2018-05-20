@@ -131,11 +131,6 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 			);
 	}
 
-	/**
-	 * @param string $UserUUID
-	 * @param string $sName
-	 * @return integer|boolean
-	 */
 	public function CreateChannel(\Aurora\Modules\Chat\Classes\Channel $oChannel)
 	{
 		if (!$this->validate($oChannel))
@@ -150,6 +145,18 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		}
 
 		return $mResult;
+	}
+
+	public function UpdateChannel(\Aurora\Modules\Chat\Classes\Channel $oChannel)
+	{
+		$oChannel->Date = date('Y-m-d H:i:s');
+		$bResult = $this->oEavManager->saveEntity($oChannel);
+		if (!$bResult)
+		{
+			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::ChannelCreateFailed);
+		}
+
+		return $bResult;
 	}
 
 	public function AddUserToChannel($mChannelIdOrUUID, $UserUUID)

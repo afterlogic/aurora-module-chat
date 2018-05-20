@@ -6,7 +6,7 @@
 		<div class="fields">
 			<div class="fieldset">
 				<div class="row">
-					<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_CHAT_WITH'}"></span>
+					<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_CHANNEL_NAME'}"></span>
 					<input class="value input" type="text" maxlength="255" data-bind="value: channelName" />
 				</div>
 				<div class="row" data-bind="visible: errorMessage().length > 0">
@@ -14,7 +14,7 @@
 				</div>
 			</div>
 			<div class="buttons">
-				<span class="button" data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_SAVE'}, click: createChannel"></span>
+				<span class="button" data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_SAVE'}, click: renameChannel"></span>
 				<span class="button secondary_button" data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_CANCEL'}, click: cancelPopup"></span>
 			</div>
 		</div>
