@@ -208,4 +208,31 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 
 		return !$mResult;
 	}
+
+	public function DeleteUserFromChannel($UserUUID, $ChannelUUID)
+	{
+		$bResult = false;
+
+		if (!$UserUUID || !$UserUUID)
+		{
+			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
+		}
+		$aChannelUsers = $this->oEavManager->getEntities(
+			$this->getModule()->getNamespace() . '\Classes\ChannelUser',
+			[],
+			0,
+			0,
+			[
+				'UserUUID' => $UserUUID,
+				'ChannelUUID' => $ChannelUUID
+			]
+		);
+		if (is_array($aChannelUsers) && !empty($aChannelUsers))
+		{
+			$oChannelUser = $aChannelUsers[0];
+			$bResult = $this->oEavManager->deleteEntity($oChannelUser->EntityId);
+		}
+
+		return $bResult;
+	}
 }

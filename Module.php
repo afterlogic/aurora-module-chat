@@ -293,4 +293,24 @@ class Module extends \Aurora\System\Module\AbstractModule
 		
 		return $bResult;
 	}
+	
+	public function DeleteUserFromChannel($UserPublicId, $ChannelUUID)
+	{
+		$bResult = false;
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		{
+			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+			if (in_array($ChannelUUID, $aChannelsUUIDs))
+			{
+				$oUserForDeletion = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($UserPublicId);
+				if ($oUserForDeletion instanceof \Aurora\Modules\Core\Classes\User)
+				{
+					$bResult = $this->oApiChannelsManager->DeleteUserFromChannel($oUserForDeletion->UUID, $ChannelUUID);
+				}
+			}
+		}
+
+		return $bResult;
+	}
 }

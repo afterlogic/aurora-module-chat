@@ -7,7 +7,11 @@
 	</span>
 	<ul class="inputosaurus-container" style="padding: 3px; width: auto;">
 	<!-- ko foreach: currentChannelUsers -->
-		<li class="address_capsule ui-draggable ui-draggable-handle"><span data-bind="text: PublicId"></span></li>
+		<li class="address_capsule ui-draggab1le ui-draggable-handle">
+			<a href="javascript:void(0);" class="ficon" data-bind="click: function() { $parent.deleteUserFromChannel($data, $parent.selectedChannel().UUID); },
+				attr: {title: 'COREWEBCLIENT/ACTION_DELETE_ADDRESS'}">&#x2716;</a>
+			<span data-bind="text: PublicId"></span>
+		</li>
 	<!-- /ko -->
 	</ul>
 </div>

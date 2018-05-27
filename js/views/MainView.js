@@ -6,6 +6,7 @@ var
 	ko = require('knockout'),
 	moment = require('moment'),
 	
+	Screens = require('%PathToCoreWebclientModule%/js/Screens.js'),
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
@@ -480,6 +481,33 @@ CChatView.prototype.editChannel = function (ChannelUUID)
 		}, this)
 	;
 	Popups.showPopup(RenameChannelPopup, [oCahnnel.UUID, oCahnnel.Name(), fOnRenameChannelCallback]);
+};
+
+CChatView.prototype.deleteUserFromChannel = function (oUser, ChannelUUID)
+{
+	Ajax.send('DeleteUserFromChannel',
+		{
+			'UserPublicId': oUser.PublicId,
+			'ChannelUUID': ChannelUUID
+		},
+		_.bind(function (oResponse) {
+			var oChannel = null;
+			if (oResponse.Result) 
+			{
+				oChannel = this.getChannelByUUID(ChannelUUID);
+				oChannel.UsersCollection(
+					_.filter(oChannel.UsersCollection(), function(oChannelUser) {
+						return oUser.UUID !== oChannelUser.UUID;
+					})
+				);
+			}
+			else
+			{
+				Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_USER_DELETING'));
+			}
+		}, this),
+		this
+	);
 };
 
 module.exports = new CChatView();
