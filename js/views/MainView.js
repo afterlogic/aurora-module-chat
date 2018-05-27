@@ -195,11 +195,15 @@ CChatView.prototype.getPreviousPosts = function ()
  */
 CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 {
-	var oCahnnel = this.getChannelByUUID(oPost.channelUUID);
+	var
+		oCahnnel = this.getChannelByUUID(oPost.channelUUID),
+		oNearestPost = null
+	;
 
 	oPost.displayDate = this.getDisplayDate(moment.utc(oPost.date));
 	oPost.displayText = oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text);
 	oPost.isOwn = bOwn;
+	oPost.hideHeader = ko.observable(false);
 
 	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Own': bOwn});
 
@@ -207,10 +211,29 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 	{
 		if (bEnd)
 		{
+			//hide header if nearest posts have the same author and time
+			oNearestPost = oCahnnel.PostsCollection()[oCahnnel.PostsCollection().length - 1];
+			if (oNearestPost &&
+					oNearestPost.name === oPost.name &&
+					oNearestPost.displayDate === oPost.displayDate
+			)
+			{
+				oPost.hideHeader(true);
+			}
 			oCahnnel.PostsCollection.push(oPost);
 		}
 		else
 		{
+			//hide header if nearest posts have the same author and time
+			oNearestPost = oCahnnel.PostsCollection()[0];
+
+			if (oNearestPost &&
+					oNearestPost.name === oPost.name &&
+					oNearestPost.displayDate === oPost.displayDate
+			)
+			{
+				oNearestPost.hideHeader(true);
+			}
 			oCahnnel.PostsCollection.unshift(oPost);
 		}
 	}

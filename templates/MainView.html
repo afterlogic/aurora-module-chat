@@ -20,7 +20,7 @@
 								</div>
 								<!-- ko foreach: currentChannelPosts -->
 								<div class="post" data-bind="css: {'own-post': isOwn}">
-									<div>
+									<div data-bind="visible: !hideHeader()">
 										<span class="name" data-bind="text: name"></span>
 										<span class="time" data-bind="text: displayDate"></span>
 									</div>
