@@ -6,23 +6,25 @@
 		.post {
 			padding: 2px 30px;
 			width: 93%;
-			font-size: 16px;
+			font-size: 14px;
 			
 			.name {
-				font-weight: bold;
+				padding-top: 10px;
+				display: inline-block;
+				color: #a7a7a7;
 			}
 			.time {
-				color: grey;
+				color: #a7a7a7;
 			}
 			.text {
-				padding: 6px;
-				background-color: #e2e2e2;
+				padding: 6px 8px;
+				background-color: #f8f8f8;
 				border-radius: 5px;
 				display: inline-block;
 				min-width: 300px;
 			}
 			.text.own-post-text {
-				background-color: #daf2f3;
+				background-color: #adf0f3;
 			}
 		}
 		.own-post {
@@ -50,11 +52,16 @@
 	}
 	
 	.panel_top {
-		padding-left: 10px;
+		padding: 0px;
 	}
 
-	.toolbar .content {
-		display: inline-block;
+	.toolbar {
+		position: relative;
+		
+		.content {
+			display: inline-block;
+			padding: 0px;
+		}
 	}
 }
 

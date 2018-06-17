@@ -22,9 +22,16 @@
 								<div class="post" data-bind="css: {'own-post': isOwn}">
 									<div data-bind="visible: !hideHeader()">
 										<span class="name" data-bind="text: name"></span>
-										<span class="time" data-bind="text: displayDate"></span>
+										<span class="time" data-bind="text: displayDate, visible: !hideMessageDate()"></span>
 									</div>
-									<div class="text" data-bind="html: displayText, css: {'own-post-text': isOwn}"></div>
+									<div class="text" data-bind="
+										html: displayText,
+										css: {'own-post-text': isOwn},
+										event: {
+											'mouseover': $parent.showMessageDate,
+											'mouseout': $parent.hideMessageDate
+										}"
+									></div>
 								</div>
 								<!-- /ko -->
 							</div>

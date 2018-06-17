@@ -204,6 +204,7 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 	oPost.displayText = oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text);
 	oPost.isOwn = bOwn;
 	oPost.hideHeader = ko.observable(false);
+	oPost.hideMessageDate = ko.observable(true);
 
 	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Own': bOwn});
 
@@ -531,6 +532,16 @@ CChatView.prototype.deleteUserFromChannel = function (oUser, ChannelUUID)
 		}, this),
 		this
 	);
+};
+
+CChatView.prototype.showMessageDate = function (oMessage)
+{
+	oMessage.hideMessageDate(false);
+};
+
+CChatView.prototype.hideMessageDate = function (oMessage)
+{
+	oMessage.hideMessageDate(true);
 };
 
 module.exports = new CChatView();

@@ -5,7 +5,7 @@
 			<span class="text" data-bind="i18n: {'key': '%MODULENAME%/ACTION_ADD_USER'}"></span>
 		</span>
 	</span>
-	<ul class="inputosaurus-container" style="padding: 3px; width: auto;">
+	<ul class="inputosaurus-container" style="padding: 0px!important; position: absolute; top: 50%; margin: -15px 0px 0px 0px; width: auto;">
 	<!-- ko foreach: currentChannelUsers -->
 		<li class="address_capsule ui-draggab1le ui-draggable-handle">
 			<a href="javascript:void(0);" class="ficon" data-bind="click: function() { $parent.deleteUserFromChannel($data, $parent.selectedChannel().UUID); },
