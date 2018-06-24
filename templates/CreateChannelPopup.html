@@ -7,7 +7,7 @@
 			<div class="fieldset">
 				<div class="row">
 					<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_CHAT_WITH'}"></span>
-					<input class="value input" type="text" maxlength="255" data-bind="value: channelName" />
+					<input class="value input" type="text" autocomplete="on" spellcheck="false" maxlength="255" data-bind="value: channelName, valueUpdate: ['blur', 'afterkeydown'], autocompleteSimple: {callback: autocompleteCallback.bind($data), dataAccessor: guestAutocompleteItem}" />
 				</div>
 				<div class="row" data-bind="visible: errorMessage().length > 0">
 					<span data-bind="text: errorMessage, style: {color: 'red'}"></span>

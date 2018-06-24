@@ -6,7 +6,9 @@ var
 	
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	CAbstractPopup = require('%PathToCoreWebclientModule%/js/popups/CAbstractPopup.js'),
-	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js')
+	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
+	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
+	App = require('%PathToCoreWebclientModule%/js/App.js')
 ;
 
 /**
@@ -22,6 +24,14 @@ function CCreateChannelPopup()
 		this.errorMessage('');
 	}, this);
 	this.fOnCreateCallback = null;
+	this.guestAutocompleteItem = ko.observable(null);
+	this.guestAutocomplete = ko.observable('');
+	this.guestAutocomplete.subscribe(function (sItem) {
+		if (sItem === '')
+		{
+			this.guestAutocompleteItem(null);
+		}
+	}, this);
 }
 
 _.extendOwn(CCreateChannelPopup.prototype, CAbstractPopup.prototype);
@@ -104,6 +114,43 @@ CCreateChannelPopup.prototype.onAddUserToChannelResponse = function (oResponse)
 	{
 		this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
 	}
+};
+
+CCreateChannelPopup.prototype.autocompleteCallback = function (sTerm, fResponse)
+{
+	var	oParameters = {
+			'Search': '',
+			'SortField': Enums.ContactSortField.Frequency,
+			'SortOrder': 1,
+			'Storage': 'all'
+		}
+	;
+
+	Ajax.send('GetContacts',
+		oParameters,
+		function (oData) {
+			var aList = [];
+			if (oData && oData.Result && oData.Result && oData.Result.List)
+			{
+				aList = _.map(oData.Result.List, function (oItem) {
+					return oItem && oItem.ViewEmail && oItem.ViewEmail !== App.getUserPublicId() ?
+						(oItem.Name && 0 < Utils.trim(oItem.Name).length ?
+							oItem.ForSharedToAll ? {value: oItem.Name, name: oItem.Name, email: oItem.ViewEmail, frequency: oItem.Frequency} :
+							{value:'"' + oItem.Name + '" <' + oItem.ViewEmail + '>', name: oItem.Name, email: oItem.ViewEmail, frequency: oItem.Frequency} : {value: oItem.ViewEmail, name: '', email: oItem.ViewEmail, frequency: oItem.Frequency}) : null;
+				}, this);
+
+				aList = _.sortBy(_.compact(aList), function(num){
+					return num.frequency;
+				}).reverse();
+			}
+
+			fResponse(aList);
+
+		},
+		this,
+		undefined,
+		'Contacts'
+	);
 };
 
 module.exports = new CCreateChannelPopup();
