@@ -93,6 +93,7 @@ function CChatView()
 		}
 		return [];
 	}, this);
+	this.deleteTitle = TextUtils.i18n('COREWEBCLIENT/ACTION_DELETE_ADDRESS');
 }
 
 _.extendOwn(CChatView.prototype, CAbstractScreenView.prototype);

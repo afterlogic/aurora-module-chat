@@ -8,7 +8,8 @@ var
 	CAbstractPopup = require('%PathToCoreWebclientModule%/js/popups/CAbstractPopup.js'),
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
-	App = require('%PathToCoreWebclientModule%/js/App.js')
+	App = require('%PathToCoreWebclientModule%/js/App.js'),
+	ModuleErrors = require('%PathToCoreWebclientModule%/js/ModuleErrors.js')
 ;
 
 /**
@@ -52,7 +53,7 @@ CCreateChannelPopup.prototype.createChannel = function ()
 		Ajax.send(
 			'CreateChannel',
 			{
-				'Name': this.channelName().trim()
+				'Name': ''/*this.channelName().trim()*/
 			},
 			this.onChannelCreateResponse, 
 			this
@@ -71,7 +72,10 @@ CCreateChannelPopup.prototype.showError = function (sMessage)
 
 CCreateChannelPopup.prototype.onChannelCreateResponse = function (oResponse)
 {
-	var oResult = oResponse.Result;
+	var
+		oResult = oResponse.Result,
+		sMessage = ''
+	;
 
 	if (oResult)
 	{
@@ -79,7 +83,15 @@ CCreateChannelPopup.prototype.onChannelCreateResponse = function (oResponse)
 	}
 	else
 	{
-		this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
+		sMessage = ModuleErrors.getErrorMessage(oResponse);
+		if (sMessage)
+		{
+			this.showError(sMessage);
+		}
+		else
+		{
+			this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
+		}
 	}
 };
 

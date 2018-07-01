@@ -133,10 +133,6 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 
 	public function CreateChannel(\Aurora\Modules\Chat\Classes\Channel $oChannel)
 	{
-		if (!$this->validate($oChannel))
-		{
-			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::ChannelAlreadyExists);
-		}
 		$oChannel->Date = date('Y-m-d H:i:s');
 		$mResult = $this->oEavManager->saveEntity($oChannel);
 		if (!$mResult)
@@ -174,7 +170,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		}
 		foreach ($aUserChannelsUUIDs as $UserChannelUUID)
 		{
-			if ($oChannel->UID === $UserChannelUUID)
+			if ($oChannel->UUID === $UserChannelUUID)
 			{
 				throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::ChannelUserAlreadyInChannel);
 			}
@@ -194,19 +190,6 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 			}
 		}
 		return $bResult;
-	}
-
-	public function validate(\Aurora\Modules\Chat\Classes\Channel $oChannel)
-	{
-		$mResult = $this->oEavManager->getEntities(
-			$this->getModule()->getNamespace() . '\Classes\Channel',
-			[],
-			0,
-			0,
-			['Name' => $oChannel->Name]
-		);
-
-		return !$mResult;
 	}
 
 	public function DeleteUserFromChannel($UserUUID, $ChannelUUID)

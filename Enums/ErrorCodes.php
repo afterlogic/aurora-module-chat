@@ -15,9 +15,8 @@ class ErrorCodes
 	const Validation_InvalidParameters	= 1000;
 	const ChannelCreateFailed			= 1001;
 	const ChannelUserCreateFailed		= 1002;
-	const ChannelAlreadyExists			= 1003;
-	const ChannelUserAlreadyInChannel	= 1004;
-	const UserNotFound					= 1005;
+	const ChannelUserAlreadyInChannel	= 1003;
+	const UserNotFound					= 1004;
 	/**
 	 * @var array
 	 */
@@ -25,7 +24,6 @@ class ErrorCodes
 		'Validation_InvalidParameters'	=> self::Validation_InvalidParameters,
 		'ChannelCreateFailed'			=> self::ChannelCreateFailed,
 		'ChannelUserCreateFailed'		=> self::ChannelUserCreateFailed,
-		'ChannelAlreadyExists'			=> self::ChannelAlreadyExists,
 		'ChannelUserAlreadyInChannel'	=> self::ChannelUserAlreadyInChannel,
 		'UserNotFound'					=> self::UserNotFound
 	];

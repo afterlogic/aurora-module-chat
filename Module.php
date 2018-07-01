@@ -24,7 +24,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->oApiPostsManager = new Managers\Posts($this);
 		$this->oApiChannelsManager = new Managers\Channels($this);
 		$this->aErrors = [
-			Enums\ErrorCodes::UserNotFound	=> $this->i18N('ERROR_USER_NOT_FOUND')
+			Enums\ErrorCodes::UserNotFound	=> $this->i18N('ERROR_USER_NOT_FOUND'),
+			Enums\ErrorCodes::ChannelUserAlreadyInChannel	=> $this->i18N('ERROR_USER_ALREADY_IN_CHANNEL')
 		];
 		$this->extendObject(
 			'Aurora\Modules\Core\Classes\User', 
@@ -176,7 +177,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $bResult;
 	}
 
-	public function CreateChannel($Name)
+	public function CreateChannel($Name = '')
 	{
 		$bResult = false;
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
@@ -224,11 +225,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function GetUserChannelsWithPosts($Limit)
 	{
 		$aResult = [];
-		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		$oAuthenticatedUser = \Aurora\System\Api::getAuthenticatedUser();
+		if (!empty($oAuthenticatedUser) && $oAuthenticatedUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
 			$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
-			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oAuthenticatedUser->UUID);
 			foreach ($aChannelsUUIDs as $ChanneUUID)
 			{
 				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChanneUUID);
@@ -254,7 +255,24 @@ class Module extends \Aurora\System\Module\AbstractModule
 						$Limit,
 						['ChannelUUID' => $oChannel->UUID]
 					);
-					$aResult[$oChannel->UUID]['Name'] = $oChannel->Name;
+					if ($oChannel->Name)
+					{
+						$aResult[$oChannel->UUID]['Name'] = $oChannel->Name;
+					}
+					else
+					{
+						//if Channel name is empty - use list of users publicIDs as channel name
+						//except authenticated user publicID
+						$aChannelUserPublicIds = [];
+						foreach ($aChannelUsers as $aChannelUser)
+						{
+							if ($oAuthenticatedUser->UUID !== $aChannelUser['UUID'])
+							{
+								$aChannelUserPublicIds[] = $aChannelUser['PublicId'];
+							}
+						}
+						$aResult[$oChannel->UUID]['Name'] = implode(", ", $aChannelUserPublicIds);
+					}
 					$aResult[$oChannel->UUID]['UsersCollection'] = $aChannelUsers;
 				}
 			}
