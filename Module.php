@@ -23,7 +23,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$this->oApiPostsManager = new Managers\Posts($this);
 		$this->oApiChannelsManager = new Managers\Channels($this);
-
+		$this->aErrors = [
+			Enums\ErrorCodes::UserNotFound	=> $this->i18N('ERROR_USER_NOT_FOUND')
+		];
 		$this->extendObject(
 			'Aurora\Modules\Core\Classes\User', 
 			[
@@ -271,6 +273,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
 			$bResult = !!$this->oApiChannelsManager->AddUserToChannel($ChannelUUID, $oUser->UUID);
+		}
+		else
+		{
+			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::UserNotFound);
 		}
 
 		return $bResult;

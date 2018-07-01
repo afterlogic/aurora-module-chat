@@ -116,13 +116,13 @@ CCreateChannelPopup.prototype.onAddUserToChannelResponse = function (oResponse)
 	}
 };
 
-CCreateChannelPopup.prototype.autocompleteCallback = function (sTerm, fResponse)
+CCreateChannelPopup.prototype.autocompleteCallback = function (oTerm, fResponse)
 {
 	var	oParameters = {
-			'Search': '',
+			'Search': oTerm.term,
 			'SortField': Enums.ContactSortField.Frequency,
 			'SortOrder': 1,
-			'Storage': 'all'
+			'Storage': 'team'
 		}
 	;
 

@@ -7,7 +7,7 @@
 			<div class="fieldset">
 				<div class="row">
 					<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_USER_PUBLIC_ID'}"></span>
-					<input class="value input" type="text" maxlength="255" data-bind="value: userPublicId" />
+					<input class="value input" type="text" autocomplete="on" spellcheck="false" maxlength="255" data-bind="value: userPublicId, valueUpdate: ['blur', 'afterkeydown'], autocompleteSimple: {callback: autocompleteCallback.bind($data), dataAccessor: guestAutocompleteItem}" />
 				</div>
 			</div>
 			<div class="buttons">
