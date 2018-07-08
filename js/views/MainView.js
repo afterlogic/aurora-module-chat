@@ -440,6 +440,15 @@ CChatView.prototype.getChannelByUUID = function (UUID)
 	});
 };
 
+CChatView.prototype.removeChannelByUUID = function (UUID)
+{
+	this.channels(
+		_.filter(this.channels(), function(oChannel){
+			return oChannel.UUID !== UUID; 
+		})
+	);
+};
+
 CChatView.prototype.getChannels = function ()
 {
 	Ajax.send('GetUserChannelsWithPosts',
@@ -520,11 +529,27 @@ CChatView.prototype.deleteUserFromChannel = function (oUser, ChannelUUID)
 			if (oResponse.Result) 
 			{
 				oChannel = this.getChannelByUUID(ChannelUUID);
-				oChannel.UsersCollection(
-					_.filter(oChannel.UsersCollection(), function(oChannelUser) {
-						return oUser.UUID !== oChannelUser.UUID;
+				//if user remove himself - remove channel from hannels list
+				if (oUser.PublicId === App.getUserPublicId())
+				{
+					this.removeChannelByUUID(ChannelUUID);
+					if (this.channels()[0])
+					{
+						this.selectedChannel(this.channels()[0]);
+					}
+					else
+					{
+						this.selectedChannel(false);
+					}
+				}
+				else
+				{//remove user from users list
+					oChannel.UsersCollection(
+						_.filter(oChannel.UsersCollection(), function(oChannelUser) {
+							return oUser.UUID !== oChannelUser.UUID;
 					})
 				);
+				}
 			}
 			else
 			{
