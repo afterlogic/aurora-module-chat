@@ -108,9 +108,12 @@ CCreateChannelPopup.prototype.addUserToChannel = function (ChannelUUID)
 	);
 };
 
-CCreateChannelPopup.prototype.onAddUserToChannelResponse = function (oResponse)
+CCreateChannelPopup.prototype.onAddUserToChannelResponse = function (oResponse, oRequest)
 {
-	var oResult = oResponse.Result;
+	var
+		oResult = oResponse.Result,
+		sMessage = ''
+	;
 
 	if (oResult)
 	{
@@ -124,7 +127,25 @@ CCreateChannelPopup.prototype.onAddUserToChannelResponse = function (oResponse)
 	}
 	else
 	{
-		this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
+		sMessage = ModuleErrors.getErrorMessage(oResponse);
+		if (sMessage)
+		{
+			this.showError(sMessage);
+		}
+		else
+		{
+			this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
+		}
+		//remove self from empty channel
+		Ajax.send(
+			'DeleteUserFromChannel',
+			{
+				'UserPublicId': App.getUserPublicId(),
+				'ChannelUUID' : oRequest.Parameters.ChannelUUID
+			},
+			function(){}, 
+			this
+		);
 	}
 };
 
