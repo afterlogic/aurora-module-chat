@@ -218,4 +218,10 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 
 		return $bResult;
 	}
+	
+	public function DeleteChannel(\Aurora\Modules\Chat\Classes\Channel $oChannel)
+	{
+		//TODO: remove channel posts
+		return $this->oEavManager->deleteEntity($oChannel->EntityId);
+	}
 }
