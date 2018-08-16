@@ -409,26 +409,7 @@ CChatView.prototype.addUser = function ()
 {
 	Popups.showPopup(AddUserPopup, [
 		//update user list after adding new user to channel
-		_.bind(function () {
-			Ajax.send('GetUserChannelsWithPosts',
-				{
-					'Limit': this.postsPerPage
-				},
-				_.bind(function(oResponse) {
-					if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
-					{
-						for (var ChannelUUID in oResponse.Result.Collection)
-						{
-							if (ChannelUUID === this.selectedChannel().UUID)
-							{
-								this.selectedChannel().UsersCollection(oResponse.Result.Collection[ChannelUUID]['UsersCollection']);
-							}
-						}
-					}
-				}, this),
-				this
-			);
-		}, this),
+		_.bind(this.updateUserListInCurrentChannel, this),
 		this.selectedChannel().UUID
 	]);
 };
@@ -544,11 +525,7 @@ CChatView.prototype.deleteUserFromChannel = function (oUser, ChannelUUID)
 				}
 				else
 				{//remove user from users list
-					oChannel.UsersCollection(
-						_.filter(oChannel.UsersCollection(), function(oChannelUser) {
-							return oUser.UUID !== oChannelUser.UUID;
-					})
-				);
+					this.updateUserListInCurrentChannel();
 				}
 			}
 			else
@@ -570,4 +547,26 @@ CChatView.prototype.hideMessageDate = function (oMessage)
 	oMessage.hideMessageDate(true);
 };
 
+CChatView.prototype.updateUserListInCurrentChannel = function () 
+{
+	Ajax.send('GetUserChannelsWithPosts',
+		{
+			'Limit': this.postsPerPage
+		},
+		_.bind(function(oResponse) {
+			if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
+			{
+				for (var ChannelUUID in oResponse.Result.Collection)
+				{
+					if (ChannelUUID === this.selectedChannel().UUID)
+					{
+						this.selectedChannel().UsersCollection(oResponse.Result.Collection[ChannelUUID]['UsersCollection']);
+						this.selectedChannel().Name(oResponse.Result.Collection[ChannelUUID]['Name']);
+					}
+				}
+			}
+		}, this),
+		this
+	);
+}
 module.exports = new CChatView();

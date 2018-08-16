@@ -56,7 +56,7 @@ CAddUserPopup.prototype.addUser = function ()
 				'UserPublicId': this.userPublicId().trim(),
 				'ChannelUUID' : this.ChannelUUID
 			},
-			this.onChannelCreateResponse, 
+			this.onAddUserResponse, 
 			this
 		);
 	}
@@ -71,7 +71,7 @@ CAddUserPopup.prototype.showError = function (sMessage)
 	Screens.showError(sMessage);
 };
 
-CAddUserPopup.prototype.onChannelCreateResponse = function (oResponse)
+CAddUserPopup.prototype.onAddUserResponse = function (oResponse)
 {
 	var 
 		oResult = oResponse.Result,
@@ -97,6 +97,7 @@ CAddUserPopup.prototype.onChannelCreateResponse = function (oResponse)
 			this.showError(TextUtils.i18n('%MODULENAME%/ERROR_DURING_ADDING_USER_TO_CHANNEL'));
 		}
 	}
+	this.userPublicId('');
 	this.closePopup();
 };
 
