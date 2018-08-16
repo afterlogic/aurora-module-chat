@@ -331,15 +331,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 				if ($oUserForDeletion instanceof \Aurora\Modules\Core\Classes\User)
 				{
 					$bResult = $this->oApiChannelsManager->DeleteUserFromChannel($oUserForDeletion->UUID, $ChannelUUID);
-					if ($bResult)
-					{
-						$aChannelUsersUUIDs = $this->oApiChannelsManager->GetChannelUsers($ChannelUUID);
-						if (count($aChannelUsersUUIDs) < 1)
-						{//delete empty channel
-							$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChannelUUID);
-							$this->oApiChannelsManager->DeleteChannel($oChannel);
-						}
-					}
 				}
 			}
 		}
