@@ -263,7 +263,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 					{
 						//if Channel name is empty - use list of users publicIDs as channel name
 						//except authenticated user publicID
-						$aChannelUserPublicIds = [];
+						$aChannelUserPublicIds = [$this->i18N('LABEL_CHANNEL_OWN_NAME')];
 						foreach ($aChannelUsers as $aChannelUser)
 						{
 							if ($oAuthenticatedUser->UUID !== $aChannelUser['UUID'])
