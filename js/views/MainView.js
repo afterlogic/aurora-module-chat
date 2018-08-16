@@ -15,6 +15,7 @@ var
 	
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	Popups = require('%PathToCoreWebclientModule%/js/Popups.js'),
+	ConfirmPopup = require('%PathToCoreWebclientModule%/js/popups/ConfirmPopup.js'),
 	
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js'),
@@ -500,41 +501,49 @@ CChatView.prototype.editChannel = function (ChannelUUID)
 
 CChatView.prototype.deleteUserFromChannel = function (oUser, ChannelUUID)
 {
-	Ajax.send('DeleteUserFromChannel',
-		{
-			'UserPublicId': oUser.PublicId,
-			'ChannelUUID': ChannelUUID
-		},
-		_.bind(function (oResponse) {
-			var oChannel = null;
-			if (oResponse.Result) 
+	Popups.showPopup(ConfirmPopup, [
+		TextUtils.i18n('%MODULENAME%/CONFIRM_REMOVE_USER_FROM_CHANNEL'),
+		_.bind(function(bConfirm) {
+			if (bConfirm)
 			{
-				oChannel = this.getChannelByUUID(ChannelUUID);
-				//if user remove himself - remove channel from hannels list
-				if (oUser.PublicId === App.getUserPublicId())
+				Ajax.send('DeleteUserFromChannel',
 				{
-					this.removeChannelByUUID(ChannelUUID);
-					if (this.channels()[0])
+					'UserPublicId': oUser.PublicId,
+					'ChannelUUID': ChannelUUID
+				},
+				_.bind(function (oResponse) {
+					var oChannel = null;
+					if (oResponse.Result) 
 					{
-						this.selectedChannel(this.channels()[0]);
+						oChannel = this.getChannelByUUID(ChannelUUID);
+						//if user remove himself - remove channel from channels list
+						if (oUser.PublicId === App.getUserPublicId())
+						{
+							this.removeChannelByUUID(ChannelUUID);
+							if (this.channels()[0])
+							{
+								this.selectedChannel(this.channels()[0]);
+							}
+							else
+							{
+								this.selectedChannel(false);
+							}
+						}
+						else
+						{//remove user from users list
+							this.updateUserListInCurrentChannel();
+						}
 					}
 					else
 					{
-						this.selectedChannel(false);
+						Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_USER_DELETING'));
 					}
-				}
-				else
-				{//remove user from users list
-					this.updateUserListInCurrentChannel();
-				}
-			}
-			else
-			{
-				Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_USER_DELETING'));
+				}, this),
+				this
+			);
 			}
 		}, this),
-		this
-	);
+		oUser.PublicId]);
 };
 
 CChatView.prototype.showMessageDate = function (oMessage)
