@@ -116,7 +116,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 * @param string $Text text of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($Text, $ChannelUUID)
+	public function CreatePost($Text, $ChannelUUID, $GUID = '')
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 
@@ -124,7 +124,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oDate = new \DateTime();
 		$oDate->setTimezone(new \DateTimeZone('UTC'));
 		$sDate = $oDate->format('Y-m-d H:i:s');
-		$this->oApiPostsManager->CreatePost($iUserId, $Text, $sDate, $ChannelUUID);
+		$this->oApiPostsManager->CreatePost($iUserId, $Text, $sDate, $ChannelUUID, /*$IsHtml*/false, $GUID);
 		return true;
 	}
 

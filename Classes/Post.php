@@ -26,5 +26,6 @@ class Post extends \Aurora\System\EAV\Entity
 		'Date'			=> array('datetime', ''),
 		'IsHtml'		=> array('bool', false),
 		'ChannelUUID'	=> array('string', ''),
+		'GUID'			=> array('string', ''),
 	);
 }

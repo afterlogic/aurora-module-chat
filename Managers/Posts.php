@@ -50,7 +50,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 			$aResults = $this->oEavManager->getEntities(
 				$this->getModule()->getNamespace() . '\Classes\Post',
 				array(
-					'UserId', 'Text', 'Date', 'ChannelUUID', 'IsHtml'
+					'UserId', 'Text', 'Date', 'ChannelUUID', 'IsHtml', 'GUID'
 				),
 				$iOffset,
 				$iLimit,
@@ -84,7 +84,8 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 							'text' => $oItem->Text,
 							'date' => $oItem->Date,
 							'channelUUID' => $oItem->ChannelUUID,
-							'is_html' => $oItem->IsHtml
+							'is_html' => $oItem->IsHtml,
+							'GUID' => $oItem->GUID
 						);
 					}
 				}
@@ -106,7 +107,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	 * @param string $sDate date of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($iUserId, $sText, $sDate, $ChannelUUID, $IsHtml = false)
+	public function CreatePost($iUserId, $sText, $sDate, $ChannelUUID, $IsHtml = false, $GUID = '')
 	{
 		$bResult = true;
 		try
@@ -117,6 +118,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 			$oNewPost->Date = $sDate;
 			$oNewPost->ChannelUUID = $ChannelUUID;
 			$oNewPost->IsHtml = $IsHtml;
+			$oNewPost->GUID = $GUID;
 			if (!$this->oEavManager->saveEntity($oNewPost))
 			{
 				throw new \Aurora\System\Exceptions\ManagerException(Errs::UsersManager_UserCreateFailed);

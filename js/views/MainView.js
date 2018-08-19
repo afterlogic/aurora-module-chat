@@ -268,19 +268,24 @@ CChatView.prototype.onGetPreviousPostsResponse = function (oResponse, oRequest)
 };
 
 /**
- * Removes recent own posts that were added between posts requests.
+ * 
  */
-CChatView.prototype.removeOwnPosts = function (oChannel)
+CChatView.prototype.updateOwnPost = function (oNewPost)
 {
-	for (var i = 0; i < oChannel.PostsCollection().length; i++)
-	{
-		if (oChannel.PostsCollection()[i].recent)
-		{
-			oChannel.PostsCollection.remove(oChannel.PostsCollection()[i]);
-		}
-	}
-};
+	var
+		oCahnnel = this.getChannelByUUID(oNewPost.channelUUID),
+		oOldPost = _.find(oCahnnel.PostsCollection(), function(oPost){
+			return oPost.GUID === oNewPost.GUID; 
+		})
+	;
 
+	if (oOldPost)
+	{
+		oOldPost.displayDate = this.getDisplayDate(moment.utc(oNewPost.date));
+		return true;
+	}
+	return false;
+};
 /**
  * Formats date for displaying.
  * 
@@ -312,15 +317,28 @@ CChatView.prototype.sendPost = function ()
 {
 	if (this.bAllowReply && $.trim(this.replyText()) !== '')
 	{
-		var sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss');
-		Ajax.send('CreatePost', {'Text': this.replyText(), 'ChannelUUID': this.selectedChannel().UUID}, false, this);
+		var
+			sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss'),
+			GUID = this.guid()
+		;
+		Ajax.send(
+			'CreatePost',
+			{
+				'Text': this.replyText(),
+				'ChannelUUID': this.selectedChannel().UUID,
+				'GUID': GUID
+			},
+			false,
+			this
+		);
 		this.addPost({
 				userId: App.getUserId(),
 				name: App.getUserPublicId(),
 				text: this.replyText(),
 				date: sDate,
 				recent: true,
-				channelUUID: this.selectedChannel().UUID
+				channelUUID: this.selectedChannel().UUID,
+				GUID: GUID
 			},
 			true,
 			true
@@ -338,15 +356,23 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 			aPosts = oResponse.Result.Collection,
 			iFirstIndex = 0
 		;
-		_.each(this.channels(), _.bind(function (oChannel) {
-			this.removeOwnPosts(oChannel);
-		},this));
+
 		/**
 		 * Adds all new posts to the end of the post list.
 		 */
 		for (var iIndex = iFirstIndex; iIndex < aPosts.length; iIndex++)
 		{
-			this.addPost(aPosts[iIndex], true, aPosts[iIndex].userId === App.getUserId());
+			if (aPosts[iIndex].userId === App.getUserId())
+			{
+				if (!this.updateOwnPost(aPosts[iIndex]))
+				{
+					this.addPost(aPosts[iIndex], true, true);
+				}
+			}
+			else
+			{
+				this.addPost(aPosts[iIndex], true, false);
+			}
 		}
 		this.scrollIfNecessary(500);
 
@@ -577,5 +603,17 @@ CChatView.prototype.updateUserListInCurrentChannel = function ()
 		}, this),
 		this
 	);
-}
+};
+
+CChatView.prototype.guid = function ()
+{
+  function s4()
+  {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+};
+
 module.exports = new CChatView();
