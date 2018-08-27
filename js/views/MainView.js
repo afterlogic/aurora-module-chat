@@ -365,7 +365,7 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 		{
 			if (aPosts[iIndex].userId === App.getUserId())
 			{
-				if (!this.updateOwnPost(aPosts[iIndex]))
+				if (aPosts[iIndex].GUID === '' || !this.updateOwnPost(aPosts[iIndex]))
 				{
 					this.addPost(aPosts[iIndex], true, true);
 				}
