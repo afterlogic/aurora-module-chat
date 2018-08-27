@@ -250,11 +250,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 					}
 					$iPostsCount = $this->oApiPostsManager->GetChannelPostsCount($oChannel->UUID);
 					$aResult[$oChannel->UUID]['PostCount'] = $iPostsCount;
-					$aResult[$oChannel->UUID]['PostsCollection'] = $this->oApiPostsManager->GetPosts(
+					$aPosts = $this->oApiPostsManager->GetPosts(
 						($iPostsCount - $Limit) > 0 ? $iPostsCount - $Limit : 0,
 						$Limit,
 						['ChannelUUID' => $oChannel->UUID]
 					);
+					$this->broadcastEvent('Chat::GetPosts', $aPosts);
+					$aResult[$oChannel->UUID]['PostsCollection'] = $aPosts;
 					if ($oChannel->Name)
 					{
 						$aResult[$oChannel->UUID]['Name'] = $oChannel->Name;

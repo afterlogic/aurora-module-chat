@@ -202,8 +202,8 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 		oNearestPost = null
 	;
 
-	oPost.displayDate = this.getDisplayDate(moment.utc(oPost.date));
-	oPost.displayText = oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text);
+	oPost.displayDate = ko.observable(this.getDisplayDate(moment.utc(oPost.date)));
+	oPost.displayText = ko.observable(oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text));
 	oPost.isOwn = bOwn;
 	oPost.hideHeader = ko.observable(false);
 	oPost.hideMessageDate = ko.observable(true);
@@ -281,7 +281,8 @@ CChatView.prototype.updateOwnPost = function (oNewPost)
 
 	if (oOldPost)
 	{
-		oOldPost.displayDate = this.getDisplayDate(moment.utc(oNewPost.date));
+		oOldPost.displayDate(this.getDisplayDate(moment.utc(oNewPost.date)));
+		oOldPost.displayText(oNewPost.is_html ? oNewPost.text : TextUtils.encodeHtml(oNewPost.text));
 		return true;
 	}
 	return false;
