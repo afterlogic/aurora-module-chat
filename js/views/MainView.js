@@ -218,7 +218,7 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 			oNearestPost = oCahnnel.PostsCollection()[oCahnnel.PostsCollection().length - 1];
 			if (oNearestPost &&
 					oNearestPost.name === oPost.name &&
-					oNearestPost.displayDate === oPost.displayDate
+					oNearestPost.displayDate() === oPost.displayDate()
 			)
 			{
 				oPost.hideHeader(true);
@@ -232,7 +232,7 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 
 			if (oNearestPost &&
 					oNearestPost.name === oPost.name &&
-					oNearestPost.displayDate === oPost.displayDate
+					oNearestPost.displayDate() === oPost.displayDate()
 			)
 			{
 				oNearestPost.hideHeader(true);
