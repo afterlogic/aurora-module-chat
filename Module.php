@@ -216,9 +216,18 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected function getPostsByDate($Date)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-
-		$aPosts = $this->oApiPostsManager->GetPosts(0, 0, ['Date' => [(string) $Date, '>=']]);
-		$this->broadcastEvent('Chat::GetPosts', $aPosts);
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		$aUserChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+		if (is_array($aUserChannelsUUIDs) && !empty($aUserChannelsUUIDs))
+		{
+			$aPosts = $this->oApiPostsManager->GetPosts(0, 0,
+				[
+					'Date' => [(string) $Date, '>='],
+					'ChannelUUID' => [\array_unique($aUserChannelsUUIDs), 'IN']
+				]
+			);
+			$this->broadcastEvent('Chat::GetPosts', $aPosts);
+		}
 		return $aPosts;
 	}
 
