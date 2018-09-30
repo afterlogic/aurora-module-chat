@@ -240,6 +240,10 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 			oCahnnel.PostsCollection.unshift(oPost);
 		}
 	}
+	else
+	{
+		this.getChannels();
+	}
 };
 
 CChatView.prototype.onGetPreviousPostsResponse = function (oResponse, oRequest)
