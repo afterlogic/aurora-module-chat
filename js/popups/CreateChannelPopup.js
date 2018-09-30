@@ -27,6 +27,7 @@ function CCreateChannelPopup()
 	this.fOnCreateCallback = null;
 	this.guestAutocompleteItem = ko.observable(null);
 	this.guestAutocomplete = ko.observable('');
+	this.isSaving = ko.observable(false);
 	this.guestAutocomplete.subscribe(function (sItem) {
 		if (sItem === '')
 		{
@@ -50,6 +51,7 @@ CCreateChannelPopup.prototype.createChannel = function ()
 {
 	if (this.channelName().trim() !== '')
 	{
+		this.isSaving(true);
 		Ajax.send(
 			'CreateChannel',
 			{
@@ -92,6 +94,7 @@ CCreateChannelPopup.prototype.onChannelCreateResponse = function (oResponse)
 		{
 			this.showError(TextUtils.i18n('%MODULENAME%/ERROR_CHANNEL_CREATING'));
 		}
+		this.isSaving(false);
 	}
 };
 
@@ -147,6 +150,7 @@ CCreateChannelPopup.prototype.onAddUserToChannelResponse = function (oResponse, 
 			this
 		);
 	}
+	this.isSaving(false);
 };
 
 CCreateChannelPopup.prototype.autocompleteCallback = function (oTerm, fResponse)
