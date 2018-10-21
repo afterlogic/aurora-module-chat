@@ -169,17 +169,13 @@ CChatView.prototype.showMore = function ()
 
 CChatView.prototype.getLastPosts = function ()
 {
-	Ajax.send('GetLastPosts', {'IsUpdateLastShowPostsDate':HeaderItemView.isCurrent()}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
+	Ajax.send('GetLastPosts', {'IsUpdateLastShowPostsTimestamp':HeaderItemView.isCurrent()}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
 };
 
 CChatView.prototype.getPreviousPosts = function ()
 {
-	var $aOffsets = {};
-
-	$aOffsets[this.selectedChannel().UUID] = this.selectedChannel().Offset();
-
 	Ajax.send('GetPosts', {
-			Offsets: $aOffsets,
+			Offset: this.selectedChannel().Offset(),
 			Limit: this.selectedChannel().Offset() > 0 ? this.postsPerPage : this.selectedChannel().PostsCount() % this.postsPerPage,
 			ChannelUUID: this.selectedChannel().UUID
 		},
@@ -359,6 +355,7 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 	{
 		var
 			aPosts = oResponse.Result.Collection,
+			aPostsCount = oResponse.Result.PostsCount,
 			iFirstIndex = 0
 		;
 
@@ -388,6 +385,16 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 		{
 			HeaderItemView.isUnseen(true);
 		}
+		//update posts count information
+		for (var ChannelUUID in aPostsCount)
+		{
+			var oChannel = this.getChannelByUUID(ChannelUUID);
+
+			if (oChannel && oChannel.PostsCollection)
+			{
+				oChannel.PostsCount(aPostsCount[ChannelUUID]);
+			}
+		}
 	}
 	this.gettingMore(false);
 	setTimeout(_.bind(this.getLastPosts, this),1000);
@@ -409,7 +416,7 @@ CChatView.prototype.removeExtraPosts = function (ChannelUUID)
 	{
 		for (var i = 0; i < iNumberOfExtraPosts; i++)
 		{
-			oChannel.PostsCollection.remove(oChannel.PostsCollection()[i]);
+			oChannel.PostsCollection.remove(oChannel.PostsCollection()[0]);
 		}
 		oChannel.Offset(Types.pInt(oChannel.Offset()) + iNumberOfExtraPosts);
 	}
@@ -496,8 +503,8 @@ CChatView.prototype.onGetChannelsResponse = function (oResponse, oRequest)
 CChatView.prototype.addChannelToList = function (ChannelUUID, oChannelData)
 {
 	this.channels.push({
-		'Offset': ko.observable(oChannelData['PostCount'] > this.postsPerPage ? oChannelData['PostCount'] - this.postsPerPage : 0),
-		'PostsCount': ko.observable(oChannelData['PostCount']),
+		'Offset': ko.observable(oChannelData['PostsCount'] > this.postsPerPage ? oChannelData['PostsCount'] - this.postsPerPage : 0),
+		'PostsCount': ko.observable(oChannelData['PostsCount']),
 		'Name': ko.observable(oChannelData['Name']),
 		'PostsOnPage': ko.observable(this.postsPerPage),
 		'PostsCollection': ko.observableArray([]),

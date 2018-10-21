@@ -133,7 +133,9 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 
 	public function CreateChannel(\Aurora\Modules\Chat\Classes\Channel $oChannel)
 	{
-		$oChannel->Date = date('Y-m-d H:i:s');
+		$oDate = new \DateTime();
+		$oDate->setTimezone(new \DateTimeZone('UTC'));
+		$oChannel->Timestamp = $oDate->getTimestamp();
 		$mResult = $this->oEavManager->saveEntity($oChannel);
 		if (!$mResult)
 		{
@@ -145,7 +147,6 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 
 	public function UpdateChannel(\Aurora\Modules\Chat\Classes\Channel $oChannel)
 	{
-		$oChannel->Date = date('Y-m-d H:i:s');
 		$bResult = $this->oEavManager->saveEntity($oChannel);
 		if (!$bResult)
 		{
@@ -182,7 +183,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 			$oNewChannelUser->UserUUID = $UserUUID;
 			$oDate = new \DateTime();
 			$oDate->setTimezone(new \DateTimeZone('UTC'));
-			$oNewChannelUser->Date = $oDate->format('Y-m-d H:i:s');
+			$oNewChannelUser->Timestamp = $oDate->getTimestamp();
 			$bResult = $this->oEavManager->saveEntity($oNewChannelUser);
 			if (!$bResult)
 			{

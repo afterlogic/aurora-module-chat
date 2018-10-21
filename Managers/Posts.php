@@ -45,57 +45,64 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	public function GetPosts($iOffset = 0, $iLimit = 0, $aSearchFilters = [])
 	{
 		$aResult = [];
-		try
-		{
-			$aResults = $this->oEavManager->getEntities(
-				$this->getModule()->getNamespace() . '\Classes\Post',
-				array(
-					'UserId', 'Text', 'Date', 'ChannelUUID', 'IsHtml', 'GUID'
-				),
-				$iOffset,
-				$iLimit,
-				$aSearchFilters
-			);
-			
-			$aUsers = array();
 
-			if (is_array($aResults))
+		$aResults = $this->oEavManager->getEntities(
+			$this->getModule()->getNamespace() . '\Classes\Post',
+			[
+				'UserId', 'Text', 'Timestamp', 'ChannelUUID', 'IsHtml', 'GUID'
+			],
+			$iOffset,
+			$iLimit,
+			$aSearchFilters
+		);
+
+		$aUsers = [];
+
+		if (is_array($aResults))
+		{
+			$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
+			if (count($aResults) > 1)
 			{
-				$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
-				foreach($aResults as $oItem)
+				//sort result by EntityId
+				usort($aResults, function ($a, $b)
+					{
+						if ($a->EntityId == $b->EntityId) {
+							return 0;
+						}
+						return ($a->EntityId < $b->EntityId) ? -1 : 1;
+					}
+				);
+			}
+			foreach($aResults as $oItem)
+			{
+				if (!isset($aUsers[$oItem->UserId]))
 				{
-					if (!isset($aUsers[$oItem->UserId]))
+					$oUser = $oCoreDecorator->GetUser($oItem->UserId);
+					if ($oUser)
 					{
-						$oUser = $oCoreDecorator->GetUser($oItem->UserId);
-						if ($oUser)
-						{
-							$aUsers[$oItem->UserId] = $oUser->PublicId;
-						}
-						else
-						{
-							$aUsers[$oItem->UserId] = '';
-						}
+						$aUsers[$oItem->UserId] = $oUser->PublicId;
 					}
-					if (isset($aUsers[$oItem->UserId]))
+					else
 					{
-						$aResult[] = array(
-							'userId' => $oItem->UserId,
-							'name' => $aUsers[$oItem->UserId],
-							'text' => $oItem->Text,
-							'date' => $oItem->Date,
-							'channelUUID' => $oItem->ChannelUUID,
-							'is_html' => $oItem->IsHtml,
-							'GUID' => $oItem->GUID
-						);
+						$aUsers[$oItem->UserId] = '';
 					}
+				}
+				if (isset($aUsers[$oItem->UserId]))
+				{
+					$aResult[] = array(
+						'id'			=> $oItem->EntityId,
+						'userId'		=> $oItem->UserId,
+						'name'			=> $aUsers[$oItem->UserId],
+						'text'			=> $oItem->Text,
+						'date'			=> date('Y-m-d H:i:s', $oItem->Timestamp),	
+						'channelUUID'	=> $oItem->ChannelUUID,
+						'is_html'		=> $oItem->IsHtml,
+						'GUID'			=> $oItem->GUID
+					);
 				}
 			}
 		}
-		catch (\Aurora\System\Exceptions\BaseException $oException)
-		{
-			$aResult = false;
-			$this->setLastException($oException);
-		}
+
 		return $aResult;
 	}
 	
@@ -104,10 +111,10 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	 * 
 	 * @param int $iUserId id of user that creates the new post.
 	 * @param string $sText text of the new post.
-	 * @param string $sDate date of the new post.
+	 * @param string $iTimestamp date of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($iUserId, $sText, $sDate, $ChannelUUID, $IsHtml = false, $GUID = '')
+	public function CreatePost($iUserId, $sText, $iTimestamp, $ChannelUUID, $IsHtml = false, $GUID = '')
 	{
 		$bResult = true;
 		try
@@ -115,7 +122,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 			$oNewPost = new \Aurora\Modules\Chat\Classes\Post($this->GetModule()->GetName());
 			$oNewPost->UserId = $iUserId;
 			$oNewPost->Text = $sText;
-			$oNewPost->Date = $sDate;
+			$oNewPost->Timestamp = $iTimestamp;
 			$oNewPost->ChannelUUID = $ChannelUUID;
 			$oNewPost->IsHtml = $IsHtml;
 			$oNewPost->GUID = $GUID;

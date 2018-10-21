@@ -23,7 +23,7 @@ class Post extends \Aurora\System\EAV\Entity
 	protected $aStaticMap = array(
 		'UserId'		=> array('int', 0),
 		'Text'			=> array('text', ''),
-		'Date'			=> array('datetime', ''),
+		'Timestamp'		=> array('int', 0),
 		'IsHtml'		=> array('bool', false),
 		'ChannelUUID'	=> array('string', ''),
 		'GUID'			=> array('string', ''),

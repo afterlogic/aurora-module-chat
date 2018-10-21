@@ -24,7 +24,7 @@ class Channel extends \Aurora\System\EAV\Entity
 	protected $aStaticMap = array(
 		'OwnerUserUUID'	=> array('string', ''),
 		'Name'		=> array('string', ''),
-		'Date'		=> array('datetime', '')
+		'Timestamp'		=> array('int', 0)
 	);
 	
 }
