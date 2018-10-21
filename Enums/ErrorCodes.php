@@ -17,6 +17,7 @@ class ErrorCodes
 	const ChannelUserCreateFailed		= 1002;
 	const ChannelUserAlreadyInChannel	= 1003;
 	const UserNotFound					= 1004;
+	const PostCreateFailed				= 1005;
 	/**
 	 * @var array
 	 */
@@ -25,6 +26,7 @@ class ErrorCodes
 		'ChannelCreateFailed'			=> self::ChannelCreateFailed,
 		'ChannelUserCreateFailed'		=> self::ChannelUserCreateFailed,
 		'ChannelUserAlreadyInChannel'	=> self::ChannelUserAlreadyInChannel,
-		'UserNotFound'					=> self::UserNotFound
+		'UserNotFound'					=> self::UserNotFound,
+		'PostCreateFailed'				=> self::PostCreateFailed
 	];
 }

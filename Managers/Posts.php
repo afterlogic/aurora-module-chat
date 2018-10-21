@@ -49,7 +49,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		$aResults = $this->oEavManager->getEntities(
 			$this->getModule()->getNamespace() . '\Classes\Post',
 			[
-				'UserId', 'Text', 'Timestamp', 'ChannelUUID', 'IsHtml', 'GUID'
+				'UserId', 'Text', 'Timestamp', 'ChannelUUID', 'IsHtml', 'GUID', 'IsSystem'
 			],
 			$iOffset,
 			$iLimit,
@@ -97,7 +97,8 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 						'date'			=> date('Y-m-d H:i:s', $oItem->Timestamp),	
 						'channelUUID'	=> $oItem->ChannelUUID,
 						'is_html'		=> $oItem->IsHtml,
-						'GUID'			=> $oItem->GUID
+						'GUID'			=> $oItem->GUID,
+						'is_system'		=> $oItem->IsSystem
 					);
 				}
 			}
@@ -114,28 +115,23 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	 * @param string $iTimestamp date of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($iUserId, $sText, $iTimestamp, $ChannelUUID, $IsHtml = false, $GUID = '')
+	public function CreatePost($iUserId, $sText, $iTimestamp, $ChannelUUID, $IsHtml = false, $GUID = '', $IsSystem = false)
 	{
 		$bResult = true;
-		try
+
+		$oNewPost = new \Aurora\Modules\Chat\Classes\Post($this->GetModule()->GetName());
+		$oNewPost->UserId = $iUserId;
+		$oNewPost->Text = $sText;
+		$oNewPost->Timestamp = $iTimestamp;
+		$oNewPost->ChannelUUID = $ChannelUUID;
+		$oNewPost->IsHtml = $IsHtml;
+		$oNewPost->GUID = $GUID;
+		$oNewPost->IsSystem = $IsSystem;
+		if (!$this->oEavManager->saveEntity($oNewPost))
 		{
-			$oNewPost = new \Aurora\Modules\Chat\Classes\Post($this->GetModule()->GetName());
-			$oNewPost->UserId = $iUserId;
-			$oNewPost->Text = $sText;
-			$oNewPost->Timestamp = $iTimestamp;
-			$oNewPost->ChannelUUID = $ChannelUUID;
-			$oNewPost->IsHtml = $IsHtml;
-			$oNewPost->GUID = $GUID;
-			if (!$this->oEavManager->saveEntity($oNewPost))
-			{
-				throw new \Aurora\System\Exceptions\ManagerException(Errs::UsersManager_UserCreateFailed);
-			}
+			throw new \Aurora\System\Exceptions\ManagerException(\Aurora\Modules\Chat\Enums\ErrorCodes::PostCreateFailed);
 		}
-		catch (\Aurora\System\Exceptions\BaseException $oException)
-		{
-			$bResult = false;
-			$this->setLastException($oException);
-		}
+
 		return $bResult;
 	}
 	
@@ -156,5 +152,31 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		}
 
 		return $iResult;
+	}
+
+	/**
+	 * Creates a new post for user.
+	 * 
+	 * @param int $iUserId id of user that creates the new post.
+	 * @param string $sText text of the new post.
+	 * @param string $iTimestamp date of the new post.
+	 * @return boolean
+	 */
+	public function CreateSystemPost($sText, $iCommandCode, $ChannelUUID, $IsHtml = false)
+	{
+		$bResult = true;
+		$oDate = new \DateTime();
+		$oDate->setTimezone(new \DateTimeZone('UTC'));
+		$sText = json_encode([
+			'Text'			=> $sText ? $sText : '',
+			'CommandCode'	=> $iCommandCode ? $iCommandCode : 0
+		]);
+
+		if (!$this->CreatePost(0, $sText, $oDate->getTimestamp(), $ChannelUUID, $IsHtml, /*GUID*/'', /*IsSystem*/true))
+		{
+			throw new \Aurora\System\Exceptions\ManagerException(\Aurora\Modules\Chat\Enums\ErrorCodes::PostCreateFailed);
+		}
+
+		return $bResult;
 	}
 }

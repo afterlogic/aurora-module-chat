@@ -343,6 +343,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
 			$bResult = !!$this->oApiChannelsManager->AddUserToChannel($ChannelUUID, $oUser->UUID);
+			if ($bResult)
+			{
+				//Create system message
+				$Text = $this->i18N('INFO_USER_ENTERED_CHANNEL', ['USERNAME' => $oUser->PublicId]);
+				$this->oApiPostsManager->CreateSystemPost($Text, \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList,$ChannelUUID);
+			}
 		}
 		else
 		{
@@ -364,6 +370,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChannelUUID);
 				$oChannel->Name = $Name;
 				$bResult = $this->oApiChannelsManager->UpdateChannel($oChannel);
+				if ($bResult)
+				{
+					$this->oApiPostsManager->CreateSystemPost('', \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList, $ChannelUUID);
+				}
 			}
 		}
 		
@@ -382,6 +392,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$oUserForDeletion = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($UserPublicId);
 				if ($oUserForDeletion instanceof \Aurora\Modules\Core\Classes\User)
 				{
+					//Create system message
+					$Text = $this->i18N('INFO_USER_LEFT_CHANNEL', ['USERNAME' => $oUserForDeletion->PublicId]);
+					$this->oApiPostsManager->CreateSystemPost($Text, \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList, $ChannelUUID);
+					usleep(500000);//wait while user get system message
 					$bResult = $this->oApiChannelsManager->DeleteUserFromChannel($oUserForDeletion->UUID, $ChannelUUID);
 				}
 			}

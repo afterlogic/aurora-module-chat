@@ -22,7 +22,9 @@ var
 	PostCheck = require('modules/%ModuleName%/js/PostCheck.js'),
 	CreateChannelPopup = require('modules/%ModuleName%/js/popups/CreateChannelPopup.js'),
 	AddUserPopup = require('modules/%ModuleName%/js/popups/AddUserPopup.js'),
-	RenameChannelPopup = require('modules/%ModuleName%/js/popups/RenameChannelPopup.js')
+	RenameChannelPopup = require('modules/%ModuleName%/js/popups/RenameChannelPopup.js'),
+
+	Enums = window.Enums
 ;
 
 /**
@@ -199,6 +201,14 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 	;
 
 	oPost.displayDate = ko.observable(this.getDisplayDate(moment.utc(oPost.date)));
+	if (oPost.is_system)
+	{
+		oPost.text = this.getSystemPostMessage(oPost);
+		if (!oPost.text)
+		{
+			return;
+		}
+	}
 	oPost.displayText = ko.observable(oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text));
 	oPost.isOwn = bOwn;
 	oPost.hideHeader = ko.observable(false);
@@ -364,6 +374,10 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 		 */
 		for (var iIndex = iFirstIndex; iIndex < aPosts.length; iIndex++)
 		{
+			if (aPosts[iIndex].is_system)
+			{
+				this.processSystemPost(aPosts[iIndex]);
+			}
 			if (aPosts[iIndex].userId === App.getUserId())
 			{
 				if (aPosts[iIndex].GUID === '' || !this.updateOwnPost(aPosts[iIndex]))
@@ -484,18 +498,10 @@ CChatView.prototype.onGetChannelsResponse = function (oResponse, oRequest)
 {
 	if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
 	{
+		this.channels([]);
 		for (var ChannelUUID in oResponse.Result.Collection)
 		{
-			if (!this.getChannelByUUID(ChannelUUID))
-			{
-				//add new chennel
-				this.addChannelToList(ChannelUUID, oResponse.Result.Collection[ChannelUUID]);
-			}
-			else
-			{
-				//update Names
-				this.getChannelByUUID(ChannelUUID).Name(oResponse.Result.Collection[ChannelUUID].Name);
-			}
+			this.addChannelToList(ChannelUUID, oResponse.Result.Collection[ChannelUUID]);
 		}
 	}
 };
@@ -582,6 +588,55 @@ CChatView.prototype.deleteUserFromChannel = function (oUser, ChannelUUID)
 			}
 		}, this),
 		oUser.PublicId]);
+};
+
+CChatView.prototype.processSystemPost = function (oPost)
+{
+	var
+		oPostData = null
+	;
+
+	try
+	{
+		oPostData = $.parseJSON(oPost.text);
+	}
+	catch (oException)
+	{
+		oPostData = null;
+	}
+	if (oPostData && oPostData.CommandCode)
+	{
+		switch (oPostData.CommandCode)
+		{
+			case Enums.CommandCodes.UpdateChannelsList:
+				this.getChannels();
+				break;
+		}
+	}
+	
+};
+
+CChatView.prototype.getSystemPostMessage = function (oPost)
+{
+	var
+		oPostData = null,
+		sMessage = ''
+	;
+
+	try
+	{
+		oPostData = $.parseJSON(oPost.text);
+	}
+	catch (oException)
+	{
+		oPostData = null;
+	}
+	if (oPostData && oPostData.Text)
+	{
+		sMessage = oPostData.Text
+	}
+	
+	return sMessage;
 };
 
 CChatView.prototype.showMessageDate = function (oMessage)
