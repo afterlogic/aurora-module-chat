@@ -49,7 +49,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		$aResults = $this->oEavManager->getEntities(
 			$this->getModule()->getNamespace() . '\Classes\Post',
 			[
-				'UserId', 'Text', 'Timestamp', 'ChannelUUID', 'IsHtml', 'GUID', 'IsSystem'
+				'UserId', 'Text', 'Timestamp', 'ChannelUUID', 'IsHtml', 'GUID', 'SystemCommandCode'
 			],
 			$iOffset,
 			$iLimit,
@@ -90,15 +90,15 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 				if (isset($aUsers[$oItem->UserId]))
 				{
 					$aResult[] = array(
-						'id'			=> $oItem->EntityId,
-						'userId'		=> $oItem->UserId,
-						'name'			=> $aUsers[$oItem->UserId],
-						'text'			=> $oItem->Text,
-						'date'			=> date('Y-m-d H:i:s', $oItem->Timestamp),	
-						'channelUUID'	=> $oItem->ChannelUUID,
-						'is_html'		=> $oItem->IsHtml,
-						'GUID'			=> $oItem->GUID,
-						'is_system'		=> $oItem->IsSystem
+						'id'				=> $oItem->EntityId,
+						'userId'			=> $oItem->UserId,
+						'name'				=> $aUsers[$oItem->UserId],
+						'text'				=> $oItem->Text,
+						'date'				=> date('Y-m-d H:i:s', $oItem->Timestamp),	
+						'channelUUID'		=> $oItem->ChannelUUID,
+						'isHtml'			=> $oItem->IsHtml,
+						'GUID'				=> $oItem->GUID,
+						'systemCommandCode'	=> $oItem->SystemCommandCode
 					);
 				}
 			}
@@ -115,7 +115,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	 * @param string $iTimestamp date of the new post.
 	 * @return boolean
 	 */
-	public function CreatePost($iUserId, $sText, $iTimestamp, $ChannelUUID, $IsHtml = false, $GUID = '', $IsSystem = false)
+	public function CreatePost($iUserId, $sText, $iTimestamp, $ChannelUUID, $IsHtml = false, $GUID = '', $SystemCommandCode = 0)
 	{
 		$bResult = true;
 
@@ -126,7 +126,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		$oNewPost->ChannelUUID = $ChannelUUID;
 		$oNewPost->IsHtml = $IsHtml;
 		$oNewPost->GUID = $GUID;
-		$oNewPost->IsSystem = $IsSystem;
+		$oNewPost->SystemCommandCode = $SystemCommandCode;
 		if (!$this->oEavManager->saveEntity($oNewPost))
 		{
 			throw new \Aurora\System\Exceptions\ManagerException(\Aurora\Modules\Chat\Enums\ErrorCodes::PostCreateFailed);
@@ -167,12 +167,8 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		$bResult = true;
 		$oDate = new \DateTime();
 		$oDate->setTimezone(new \DateTimeZone('UTC'));
-		$sText = json_encode([
-			'Text'			=> $sText ? $sText : '',
-			'CommandCode'	=> $iCommandCode ? $iCommandCode : 0
-		]);
 
-		if (!$this->CreatePost(0, $sText, $oDate->getTimestamp(), $ChannelUUID, $IsHtml, /*GUID*/'', /*IsSystem*/true))
+		if (!$this->CreatePost(0, $sText, $oDate->getTimestamp(), $ChannelUUID, $IsHtml, /*GUID*/'', $iCommandCode))
 		{
 			throw new \Aurora\System\Exceptions\ManagerException(\Aurora\Modules\Chat\Enums\ErrorCodes::PostCreateFailed);
 		}

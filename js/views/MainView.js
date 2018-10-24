@@ -201,15 +201,7 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 	;
 
 	oPost.displayDate = ko.observable(this.getDisplayDate(moment.utc(oPost.date)));
-	if (oPost.is_system)
-	{
-		oPost.text = this.getSystemPostMessage(oPost);
-		if (!oPost.text)
-		{
-			return;
-		}
-	}
-	oPost.displayText = ko.observable(oPost.is_html ? oPost.text : TextUtils.encodeHtml(oPost.text));
+	oPost.displayText = ko.observable(oPost.isHtml ? oPost.text : TextUtils.encodeHtml(oPost.text));
 	oPost.isOwn = bOwn;
 	oPost.hideHeader = ko.observable(false);
 	oPost.hideMessageDate = ko.observable(true);
@@ -292,7 +284,7 @@ CChatView.prototype.updateOwnPost = function (oNewPost)
 	if (oOldPost)
 	{
 		oOldPost.displayDate(this.getDisplayDate(moment.utc(oNewPost.date)));
-		oOldPost.displayText(oNewPost.is_html ? oNewPost.text : TextUtils.encodeHtml(oNewPost.text));
+		oOldPost.displayText(oNewPost.isHtml ? oNewPost.text : TextUtils.encodeHtml(oNewPost.text));
 		return true;
 	}
 	return false;
@@ -374,7 +366,7 @@ CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
 		 */
 		for (var iIndex = iFirstIndex; iIndex < aPosts.length; iIndex++)
 		{
-			if (aPosts[iIndex].is_system)
+			if (aPosts[iIndex].systemCommandCode)
 			{
 				this.processSystemPost(aPosts[iIndex]);
 			}
@@ -592,28 +584,12 @@ CChatView.prototype.deleteUserFromChannel = function (oUser, ChannelUUID)
 
 CChatView.prototype.processSystemPost = function (oPost)
 {
-	var
-		oPostData = null
-	;
-
-	try
+	switch (oPost.systemCommandCode)
 	{
-		oPostData = $.parseJSON(oPost.text);
+		case Enums.CommandCodes.UpdateChannelsList:
+			this.getChannels();
+			break;
 	}
-	catch (oException)
-	{
-		oPostData = null;
-	}
-	if (oPostData && oPostData.CommandCode)
-	{
-		switch (oPostData.CommandCode)
-		{
-			case Enums.CommandCodes.UpdateChannelsList:
-				this.getChannels();
-				break;
-		}
-	}
-	
 };
 
 CChatView.prototype.getSystemPostMessage = function (oPost)
