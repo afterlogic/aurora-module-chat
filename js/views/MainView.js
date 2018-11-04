@@ -206,41 +206,44 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 	oPost.hideHeader = ko.observable(false);
 	oPost.hideMessageDate = ko.observable(true);
 
-	App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Own': bOwn});
-
-	if (oCahnnel && oCahnnel.PostsCollection)
+	if (oPost.displayText() !== '')
 	{
-		if (bEnd)
+		App.broadcastEvent('Chat::DisplayPost::before', {'Post': oPost, 'Own': bOwn});
+
+		if (oCahnnel && oCahnnel.PostsCollection)
 		{
-			//hide header if nearest posts have the same author and time
-			oNearestPost = oCahnnel.PostsCollection()[oCahnnel.PostsCollection().length - 1];
-			if (oNearestPost &&
-					oNearestPost.name === oPost.name &&
-					oNearestPost.displayDate() === oPost.displayDate()
-			)
+			if (bEnd)
 			{
-				oPost.hideHeader(true);
+				//hide header if nearest posts have the same author and time
+				oNearestPost = oCahnnel.PostsCollection()[oCahnnel.PostsCollection().length - 1];
+				if (oNearestPost &&
+						oNearestPost.name === oPost.name &&
+						oNearestPost.displayDate() === oPost.displayDate()
+				)
+				{
+					oPost.hideHeader(true);
+				}
+				oCahnnel.PostsCollection.push(oPost);
 			}
-			oCahnnel.PostsCollection.push(oPost);
+			else
+			{
+				//hide header if nearest posts have the same author and time
+				oNearestPost = oCahnnel.PostsCollection()[0];
+
+				if (oNearestPost &&
+						oNearestPost.name === oPost.name &&
+						oNearestPost.displayDate() === oPost.displayDate()
+				)
+				{
+					oNearestPost.hideHeader(true);
+				}
+				oCahnnel.PostsCollection.unshift(oPost);
+			}
 		}
 		else
 		{
-			//hide header if nearest posts have the same author and time
-			oNearestPost = oCahnnel.PostsCollection()[0];
-
-			if (oNearestPost &&
-					oNearestPost.name === oPost.name &&
-					oNearestPost.displayDate() === oPost.displayDate()
-			)
-			{
-				oNearestPost.hideHeader(true);
-			}
-			oCahnnel.PostsCollection.unshift(oPost);
+			this.getChannels();
 		}
-	}
-	else
-	{
-		this.getChannels();
 	}
 };
 
