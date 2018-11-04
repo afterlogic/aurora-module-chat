@@ -497,12 +497,23 @@ CChatView.prototype.getChannels = function ()
 
 CChatView.prototype.onGetChannelsResponse = function (oResponse, oRequest)
 {
+	var SelectedChannelUUID = this.selectedChannel() ? this.selectedChannel().UUID : '';
+
 	if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
 	{
 		this.channels([]);
+		this.selectedChannel(null);
 		for (var ChannelUUID in oResponse.Result.Collection)
 		{
 			this.addChannelToList(ChannelUUID, oResponse.Result.Collection[ChannelUUID]);
+			if (ChannelUUID === SelectedChannelUUID)
+			{
+				this.selectedChannel(this.getChannelByUUID(ChannelUUID));
+			}
+		}
+		if (!this.selectedChannel() && this.channels()[0])
+		{
+			this.selectedChannel(this.channels()[0]);
 		}
 	}
 };
