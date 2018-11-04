@@ -147,7 +147,13 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		{
 			$iResult = (int) $this->oEavManager->getEntitiesCount(
 				$this->getModule()->getNamespace() . '\Classes\Post',
-				['ChannelUUID' => $ChannelUUID]
+				[
+					'$AND' =>
+					[
+						'ChannelUUID' => $ChannelUUID,
+						'Text' => ['NULL', 'IS NOT']
+					]
+				]
 			);
 		}
 

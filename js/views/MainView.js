@@ -176,9 +176,16 @@ CChatView.prototype.getLastPosts = function ()
 
 CChatView.prototype.getPreviousPosts = function ()
 {
+	var iLimit = this.postsPerPage;
+
+	if (this.selectedChannel().Offset() === 0 &&
+		(this.selectedChannel().PostsCount() % this.postsPerPage) !== 0)
+	{
+		iLimit = this.selectedChannel().PostsCount() % this.postsPerPage;
+	}
 	Ajax.send('GetPosts', {
 			Offset: this.selectedChannel().Offset(),
-			Limit: this.selectedChannel().Offset() > 0 ? this.postsPerPage : this.selectedChannel().PostsCount() % this.postsPerPage,
+			Limit: iLimit,
 			ChannelUUID: this.selectedChannel().UUID
 		},
 		this.onGetPreviousPostsResponse,

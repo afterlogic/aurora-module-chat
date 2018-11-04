@@ -99,7 +99,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 					$this->oApiPostsManager->GetPosts(
 						$Offset,
 						$Limit,
-						['ChannelUUID' =>$oChannel->UUID]
+						[
+							'$AND' =>
+							[
+								'ChannelUUID' => $oChannel->UUID,
+								'Text' => ['NULL', 'IS NOT']
+							]
+						]
 					)
 				);
 			}
@@ -310,7 +316,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 					$aPosts = $this->oApiPostsManager->GetPosts(
 						($iPostsCount - $Limit) > 0 ? $iPostsCount - $Limit : 0,
 						$Limit,
-						['ChannelUUID' => $oChannel->UUID]
+						[
+							'$AND' =>
+							[
+								'ChannelUUID' => $oChannel->UUID,
+								'Text' => ['NULL', 'IS NOT']
+							]
+						]
 					);
 					$this->broadcastEvent('Chat::GetPosts', $aPosts);
 					$aResult[$oChannel->UUID]['PostsCollection'] = $aPosts;
