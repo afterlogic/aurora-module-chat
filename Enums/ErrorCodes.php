@@ -18,6 +18,7 @@ class ErrorCodes
 	const ChannelUserAlreadyInChannel	= 1003;
 	const UserNotFound					= 1004;
 	const PostCreateFailed				= 1005;
+	const PermissionDenied				= 1006;
 	/**
 	 * @var array
 	 */
@@ -27,6 +28,7 @@ class ErrorCodes
 		'ChannelUserCreateFailed'		=> self::ChannelUserCreateFailed,
 		'ChannelUserAlreadyInChannel'	=> self::ChannelUserAlreadyInChannel,
 		'UserNotFound'					=> self::UserNotFound,
-		'PostCreateFailed'				=> self::PostCreateFailed
+		'PostCreateFailed'				=> self::PostCreateFailed,
+		'PermissionDenied'				=> self::PermissionDenied
 	];
 }

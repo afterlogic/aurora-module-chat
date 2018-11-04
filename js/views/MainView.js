@@ -334,7 +334,13 @@ CChatView.prototype.sendPost = function ()
 				'ChannelUUID': this.selectedChannel().UUID,
 				'GUID': GUID
 			},
-			false,
+			function (oResponse)
+			{
+				if (oResponse && !oResponse.Result)
+				{
+					Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_POST_CREATING'));
+				}
+			},
 			this
 		);
 		this.addPost({

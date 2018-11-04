@@ -25,7 +25,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->oApiChannelsManager = new Managers\Channels($this);
 		$this->aErrors = [
 			Enums\ErrorCodes::UserNotFound	=> $this->i18N('ERROR_USER_NOT_FOUND'),
-			Enums\ErrorCodes::ChannelUserAlreadyInChannel	=> $this->i18N('ERROR_USER_ALREADY_IN_CHANNEL')
+			Enums\ErrorCodes::ChannelUserAlreadyInChannel	=> $this->i18N('ERROR_USER_ALREADY_IN_CHANNEL'),
+			Enums\ErrorCodes::PermissionDenied	=> $this->i18N('ERROR_PERMISSION_DENIED')
 		];
 		$this->extendObject(
 			'Aurora\Modules\Core\Classes\User', 
@@ -120,10 +121,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 
-		$iUserId = \Aurora\System\Api::getAuthenticatedUserId();
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		
+		$aChannelUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+		if (!in_array($ChannelUUID, $aChannelUUIDs))
+		{
+			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::PermissionDenied);
+		}
 		$oDate = new \DateTime();
 		$oDate->setTimezone(new \DateTimeZone('UTC'));
-		$this->oApiPostsManager->CreatePost($iUserId, $Text, $oDate->getTimestamp(), $ChannelUUID, /*$IsHtml*/false, $GUID);
+		$this->oApiPostsManager->CreatePost($oUser->EntityId, $Text, $oDate->getTimestamp(), $ChannelUUID, /*$IsHtml*/false, $GUID);
 		return true;
 	}
 
