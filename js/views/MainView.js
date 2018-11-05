@@ -495,7 +495,7 @@ CChatView.prototype.getChannels = function ()
 {
 	Ajax.send('GetUserChannelsWithPosts',
 		{
-			'Limit': this.postsPerPage
+			'Limit': 0 //need only channels list
 		},
 		this.onGetChannelsResponse,
 		this
@@ -504,20 +504,41 @@ CChatView.prototype.getChannels = function ()
 
 CChatView.prototype.onGetChannelsResponse = function (oResponse, oRequest)
 {
-	var SelectedChannelUUID = this.selectedChannel() ? this.selectedChannel().UUID : '';
+	var
+		SelectedChannelUUID = this.selectedChannel() ? this.selectedChannel().UUID : '',
+		aProcessedChannelsUUIDs = [];
+	;
 
 	if (oResponse.Result && oResponse.Result.Collection && !_.isEmpty(oResponse.Result.Collection))
 	{
-		this.channels([]);
 		this.selectedChannel(null);
 		for (var ChannelUUID in oResponse.Result.Collection)
 		{
-			this.addChannelToList(ChannelUUID, oResponse.Result.Collection[ChannelUUID]);
+			var oCurrentChannel = this.getChannelByUUID(ChannelUUID);
+
+			aProcessedChannelsUUIDs.push(ChannelUUID);
+			if (oCurrentChannel)
+			{//update existing channel
+				oCurrentChannel.PostsCount(oResponse.Result.Collection[ChannelUUID]['PostsCount']);
+				oCurrentChannel.Name(oResponse.Result.Collection[ChannelUUID]['Name']);
+			}
+			else
+			{
+				this.addChannelToList(ChannelUUID, oResponse.Result.Collection[ChannelUUID]);
+			}
 			if (ChannelUUID === SelectedChannelUUID)
 			{
 				this.selectedChannel(this.getChannelByUUID(ChannelUUID));
 			}
 		}
+		//deleting channels that are no longer available to the user
+		_.each(this.channels(), _.bind(function (oChannel) {
+			if (aProcessedChannelsUUIDs.indexOf(oChannel.UUID) === -1)
+			{
+				this.removeChannelByUUID(oChannel.UUID);
+			}
+		},this));
+		//if selected channel was removed set first channel as selected
 		if (!this.selectedChannel() && this.channels()[0])
 		{
 			this.selectedChannel(this.channels()[0]);
