@@ -47,7 +47,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		$aResult = [];
 
 		$aResults = $this->oEavManager->getEntities(
-			$this->getModule()->getNamespace() . '\Classes\Post',
+			$this->getModule()::getNamespace() . '\Classes\Post',
 			[
 				'UserId', 'Text', 'Timestamp', 'ChannelUUID', 'IsHtml', 'GUID', 'SystemCommandCode'
 			],
@@ -119,7 +119,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	{
 		$bResult = true;
 
-		$oNewPost = new \Aurora\Modules\Chat\Classes\Post($this->GetModule()->GetName());
+		$oNewPost = new \Aurora\Modules\Chat\Classes\Post($this->GetModule()::GetName());
 		$oNewPost->UserId = $iUserId;
 		$oNewPost->Text = $sText;
 		$oNewPost->Timestamp = $iTimestamp;
@@ -146,7 +146,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		if (is_string($ChannelUUID))
 		{
 			$iResult = (int) $this->oEavManager->getEntitiesCount(
-				$this->getModule()->getNamespace() . '\Classes\Post',
+				$this->getModule()::getNamespace() . '\Classes\Post',
 				[
 					'$AND' =>
 					[

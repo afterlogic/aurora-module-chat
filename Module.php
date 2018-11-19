@@ -28,13 +28,15 @@ class Module extends \Aurora\System\Module\AbstractModule
 			Enums\ErrorCodes::ChannelUserAlreadyInChannel	=> $this->i18N('ERROR_USER_ALREADY_IN_CHANNEL'),
 			Enums\ErrorCodes::PermissionDenied	=> $this->i18N('ERROR_PERMISSION_DENIED')
 		];
-		$this->extendObject(
-			'Aurora\Modules\Core\Classes\User', 
+
+		\Aurora\Modules\Core\Classes\User::extend(
+			self::GetName(),
 			[
 				'EnableModule'				=> ['bool', true],
 				'LastShowPostsTimestamp'	=> ['int', 0], //used to check if user have unseen posts
 				'LastRespondedPostId'		=> ['int', 0]  //used to find posts that were created after the last request GetLastPosts
 			]
+
 		);
 	}
 
@@ -49,7 +51,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
 			return array(
-				'EnableModule' => $oUser->{$this->GetName().'::EnableModule'}
+				'EnableModule' => $oUser->{self::GetName().'::EnableModule'}
 			);
 		}
 
@@ -71,7 +73,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		{
 			$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
 			$oUser = $oCoreDecorator->GetUser($iUserId);
-			$oUser->{$this->GetName().'::EnableModule'} = $EnableModule;
+			$oUser->{self::GetName().'::EnableModule'} = $EnableModule;
 			$oCoreDecorator->UpdateUserObject($oUser);
 		}
 		return true;
@@ -151,9 +153,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$oNow = new \DateTime("-1 seconds");
 			$oNow->setTimezone(new \DateTimeZone('UTC'));
 			$iCheckTime = $oNow->getTimestamp();
-			if ($IsUpdateLastShowPostsTimestamp || $oUser->{$this->GetName() . '::LastShowPostsTimestamp'} === 0)
+			if ($IsUpdateLastShowPostsTimestamp || $oUser->{self::GetName() . '::LastShowPostsTimestamp'} === 0)
 			{
-				$oUser->{$this->GetName() . '::LastShowPostsTimestamp'} = $iCheckTime;
+				$oUser->{self::GetName() . '::LastShowPostsTimestamp'} = $iCheckTime;
 				if ($oCoreDecorator)
 				{
 					$oCoreDecorator->UpdateUserObject($oUser);
@@ -163,12 +165,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 			while (time() < $iEndTime)
 			{
 				usleep(500000);
-				$aPosts = $this->getPostsById($oUser->{$this->GetName() . '::LastRespondedPostId'});
+				$aPosts = $this->getPostsById($oUser->{self::GetName() . '::LastRespondedPostId'});
 				if(is_array($aPosts) && !empty($aPosts))
 				{
 					if ($oCoreDecorator)
 					{
-						$oUser->{$this->GetName() . '::LastRespondedPostId'} = $aPosts[count($aPosts) - 1]['id'];
+						$oUser->{self::GetName() . '::LastRespondedPostId'} = $aPosts[count($aPosts) - 1]['id'];
 						$oCoreDecorator->UpdateUserObject($oUser);
 					}
 					$mResult = ['Collection' => $aPosts];
@@ -201,7 +203,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
-			$aUnseenPosts = $this->getPostsByTimestamp($oUser->{$this->GetName() . '::LastShowPostsTimestamp'});
+			$aUnseenPosts = $this->getPostsByTimestamp($oUser->{self::GetName() . '::LastShowPostsTimestamp'});
 			if (is_array($aUnseenPosts) && count($aUnseenPosts) > 0)
 			{
 				$bResult = true;
@@ -216,7 +218,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
-			$oChannel = new \Aurora\Modules\Chat\Classes\Channel($this->GetName());
+			$oChannel = new \Aurora\Modules\Chat\Classes\Channel(self::GetName());
 			$oChannel->Name = $Name;
 			$iChannelId = $this->oApiChannelsManager->CreateChannel($oChannel);
 			if ($iChannelId)
