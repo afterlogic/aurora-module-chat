@@ -40,7 +40,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 	public function GetUserChannelsCount()
 	{
 		return $this->oEavManager->getEntitiesCount(
-			$this->getModule()::getNamespace() . '\Classes\Channel', []
+			\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\Channel', []
 		);
 	}
 
@@ -55,7 +55,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		if (!empty($UserUUID))
 		{
 			$aUserChannels = $this->oEavManager->getEntities(
-				$this->getModule()::getNamespace() . '\Classes\ChannelUser',
+				\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\ChannelUser',
 				['ChannelUUID'],
 				0,
 				0,
@@ -83,7 +83,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
         if (!empty($ChannelUUID))
         {
             $aChannelUsers = $this->oEavManager->getEntities(
-                $this->getModule()::getNamespace() . '\Classes\ChannelUser',
+                \Aurora\Modules\Chat\Module::getNamespace() . '\Classes\ChannelUser',
                 ['UserUUID'],
                 0,
                 0,
@@ -111,7 +111,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		$mChannel = false;
 		if ($mIdOrUUID)
 		{
-			$mChannel = $this->oEavManager->getEntity($mIdOrUUID, $this->getModule()::getNamespace() . '\Classes\Channel');
+			$mChannel = $this->oEavManager->getEntity($mIdOrUUID, \Aurora\Modules\Chat\Module::getNamespace() . '\Classes\Channel');
 		}
 		else
 		{
@@ -123,7 +123,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 	public function GetChannels($iLimit = 0, $iOffset = 0, $aSearchFilters = [], $aViewAttributes = [])
 	{
 		return	$this->oEavManager->getEntities(
-				$this->getModule()::getNamespace() . '\Classes\Channel',
+				\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\Channel',
 				$aViewAttributes,
 				$iOffset,
 				$iLimit,
@@ -178,7 +178,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		}
 		if ($oChannel instanceof \Aurora\Modules\Chat\Classes\Channel)
 		{
-			$oNewChannelUser = new \Aurora\Modules\Chat\Classes\ChannelUser($this->GetModule()::GetName());
+			$oNewChannelUser = new \Aurora\Modules\Chat\Classes\ChannelUser(\Aurora\Modules\Chat\Module::GetName());
 			$oNewChannelUser->ChannelUUID = $oChannel->UUID;
 			$oNewChannelUser->UserUUID = $UserUUID;
 			$oDate = new \DateTime();
@@ -202,7 +202,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
 		}
 		$aChannelUsers = $this->oEavManager->getEntities(
-			$this->getModule()::getNamespace() . '\Classes\ChannelUser',
+			\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\ChannelUser',
 			[],
 			0,
 			0,
