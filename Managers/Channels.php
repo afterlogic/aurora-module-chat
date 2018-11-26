@@ -31,7 +31,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 	{
 		parent::__construct($oModule);
 		
-		$this->oEavManager = new \Aurora\System\Managers\Eav();
+		$this->oEavManager = \Aurora\System\Managers\Eav::getInstance();
 	}
 
 	/**
@@ -40,7 +40,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 	public function GetUserChannelsCount()
 	{
 		return $this->oEavManager->getEntitiesCount(
-			\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\Channel', []
+			\Aurora\Modules\Chat\Classes\Channel::class, []
 		);
 	}
 
@@ -55,7 +55,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		if (!empty($UserUUID))
 		{
 			$aUserChannels = $this->oEavManager->getEntities(
-				\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\ChannelUser',
+				\Aurora\Modules\Chat\Classes\ChannelUser::class,
 				['ChannelUUID'],
 				0,
 				0,
@@ -83,7 +83,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
         if (!empty($ChannelUUID))
         {
             $aChannelUsers = $this->oEavManager->getEntities(
-                \Aurora\Modules\Chat\Module::getNamespace() . '\Classes\ChannelUser',
+                \Aurora\Modules\Chat\Classes\ChannelUser::class,
                 ['UserUUID'],
                 0,
                 0,
@@ -111,7 +111,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		$mChannel = false;
 		if ($mIdOrUUID)
 		{
-			$mChannel = $this->oEavManager->getEntity($mIdOrUUID, \Aurora\Modules\Chat\Module::getNamespace() . '\Classes\Channel');
+			$mChannel = $this->oEavManager->getEntity($mIdOrUUID, \Aurora\Modules\Chat\Classes\Channel::class);
 		}
 		else
 		{
@@ -123,7 +123,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 	public function GetChannels($iLimit = 0, $iOffset = 0, $aSearchFilters = [], $aViewAttributes = [])
 	{
 		return	$this->oEavManager->getEntities(
-				\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\Channel',
+				\Aurora\Modules\Chat\Classes\Channel::class,
 				$aViewAttributes,
 				$iOffset,
 				$iLimit,
@@ -202,7 +202,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
 		}
 		$aChannelUsers = $this->oEavManager->getEntities(
-			\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\ChannelUser',
+			\Aurora\Modules\Chat\Classes\ChannelUser::class,
 			[],
 			0,
 			0,

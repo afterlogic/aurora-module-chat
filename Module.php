@@ -16,13 +16,31 @@ namespace Aurora\Modules\Chat;
  */
 class Module extends \Aurora\System\Module\AbstractModule
 {
-	public $oApiPostsManager = null;
-	public $oApiChannelsManager = null;
+	public $oPostsManager = null;
+	public $oChannelsManager = null;
+
+	public function getPostsManager()
+	{
+		if ($this->oPostsManager === null)
+		{
+			$this->oPostsManager = new Managers\Posts($this);
+		}
+
+		return $this->oPostsManager;
+	}
+	
+	public function getChannelsManager()
+	{
+		if ($this->oChannelsManager === null)
+		{
+			$this->oChannelsManager = new Managers\Channels($this);
+		}
+
+		return $this->oChannelsManager;
+	}	
 
 	public function init() 
 	{
-		$this->oApiPostsManager = new Managers\Posts($this);
-		$this->oApiChannelsManager = new Managers\Channels($this);
 		$this->aErrors = [
 			Enums\ErrorCodes::UserNotFound	=> $this->i18N('ERROR_USER_NOT_FOUND'),
 			Enums\ErrorCodes::ChannelUserAlreadyInChannel	=> $this->i18N('ERROR_USER_ALREADY_IN_CHANNEL'),
@@ -98,7 +116,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			{
 				$aPosts = array_merge(
 					$aPosts,
-					$this->oApiPostsManager->GetPosts(
+					$this->getPostsManager()->GetPosts(
 						$Offset,
 						$Limit,
 						[
@@ -131,14 +149,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		
-		$aChannelUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+		$aChannelUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 		if (!in_array($ChannelUUID, $aChannelUUIDs))
 		{
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::PermissionDenied);
 		}
 		$oDate = new \DateTime();
 		$oDate->setTimezone(new \DateTimeZone('UTC'));
-		$this->oApiPostsManager->CreatePost($oUser->EntityId, $Text, $oDate->getTimestamp(), $ChannelUUID, /*$IsHtml*/false, $GUID);
+		$this->getPostsManager()->CreatePost($oUser->EntityId, $Text, $oDate->getTimestamp(), $ChannelUUID, /*$IsHtml*/false, $GUID);
 		return true;
 	}
 
@@ -186,7 +204,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 					);
 					foreach ($aChannelsUUIDs as $ChannelUUID)
 					{
-						$iPostsCount = $this->oApiPostsManager->GetChannelPostsCount($ChannelUUID);
+						$iPostsCount = $this->getPostsManager()->GetChannelPostsCount($ChannelUUID);
 						$aPostsCount[$ChannelUUID] = $iPostsCount;
 					}
 					$mResult['PostsCount'] = $aPostsCount;
@@ -220,14 +238,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 		{
 			$oChannel = new \Aurora\Modules\Chat\Classes\Channel(self::GetName());
 			$oChannel->Name = $Name;
-			$iChannelId = $this->oApiChannelsManager->CreateChannel($oChannel);
+			$iChannelId = $this->getChannelsManager()->CreateChannel($oChannel);
 			if ($iChannelId)
 			{
-				$bResult = !!$this->oApiChannelsManager->AddUserToChannel($iChannelId, $oUser->UUID);
+				$bResult = !!$this->getChannelsManager()->AddUserToChannel($iChannelId, $oUser->UUID);
 			}
 			if ($bResult)
 			{
-				$oNewChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($iChannelId);
+				$oNewChannel = $this->getChannelsManager()->GetChannelByIdOrUUID($iChannelId);
 			}
 		}
 		return $oNewChannel ? $oNewChannel->UUID : $bResult;
@@ -239,8 +257,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
-			$aChannelUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
-			$aResult = $this->oApiChannelsManager->GetChannels(0, 0,
+			$aChannelUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
+			$aResult = $this->getChannelsManager()->GetChannels(0, 0,
 				['UUID' => [\array_unique($aChannelUUIDs), 'IN']],
 				['Name']
 			);
@@ -252,10 +270,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		$aUserChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+		$aUserChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 		if (is_array($aUserChannelsUUIDs) && !empty($aUserChannelsUUIDs))
 		{
-			$aPosts = $this->oApiPostsManager->GetPosts(0, 0,
+			$aPosts = $this->getPostsManager()->GetPosts(0, 0,
 				[
 					'Timestamp' => [$iTimestamp, '>'],
 					'ChannelUUID' => [\array_unique($aUserChannelsUUIDs), 'IN']
@@ -273,10 +291,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		$aUserChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+		$aUserChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 		if (is_array($aUserChannelsUUIDs) && !empty($aUserChannelsUUIDs))
 		{
-			$aPosts = $this->oApiPostsManager->GetPosts(0, 0,
+			$aPosts = $this->getPostsManager()->GetPosts(0, 0,
 				[
 					'EntityId' => [$Id, '>'],
 					'ChannelUUID' => [\array_unique($aUserChannelsUUIDs), 'IN']
@@ -294,13 +312,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if (!empty($oAuthenticatedUser) && $oAuthenticatedUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
 			$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
-			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oAuthenticatedUser->UUID);
+			$aChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oAuthenticatedUser->UUID);
 			foreach ($aChannelsUUIDs as $ChanneUUID)
 			{
-				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChanneUUID);
+				$oChannel = $this->getChannelsManager()->GetChannelByIdOrUUID($ChanneUUID);
 				if ($oChannel instanceof \Aurora\Modules\Chat\Classes\Channel)
 				{
-					$aChannelUsersUUIDs = $this->oApiChannelsManager->GetChannelUsers($oChannel->UUID);
+					$aChannelUsersUUIDs = $this->getChannelsManager()->GetChannelUsers($oChannel->UUID);
 					$aChannelUsers = [];
 					foreach ($aChannelUsersUUIDs as $UserUUID)
 					{
@@ -313,9 +331,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 							];
 						}
 					}
-					$iPostsCount = $this->oApiPostsManager->GetChannelPostsCount($oChannel->UUID);
+					$iPostsCount = $this->getPostsManager()->GetChannelPostsCount($oChannel->UUID);
 					$aResult[$oChannel->UUID]['PostsCount'] = $iPostsCount;
-					$aPosts = $this->oApiPostsManager->GetPosts(
+					$aPosts = $this->getPostsManager()->GetPosts(
 						($iPostsCount - $Limit) > 0 ? $iPostsCount - $Limit : 0,
 						$Limit,
 						[
@@ -363,12 +381,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = \Aurora\Modules\Core\Module::Decorator()->GetUserByPublicId($UserPublicId);
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
-			$bResult = !!$this->oApiChannelsManager->AddUserToChannel($ChannelUUID, $oUser->UUID);
+			$bResult = !!$this->getChannelsManager()->AddUserToChannel($ChannelUUID, $oUser->UUID);
 			if ($bResult)
 			{
 				//Create system message
 				$Text = $this->i18N('INFO_USER_ENTERED_CHANNEL', ['USERNAME' => $oUser->PublicId]);
-				$this->oApiPostsManager->CreateSystemPost($Text, \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList,$ChannelUUID);
+				$this->getPostsManager()->CreateSystemPost($Text, \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList,$ChannelUUID);
 			}
 		}
 		else
@@ -385,15 +403,15 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
-			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+			$aChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 			if (in_array($ChannelUUID, $aChannelsUUIDs))
 			{
-				$oChannel = $this->oApiChannelsManager->GetChannelByIdOrUUID($ChannelUUID);
+				$oChannel = $this->getChannelsManager()->GetChannelByIdOrUUID($ChannelUUID);
 				$oChannel->Name = $Name;
-				$bResult = $this->oApiChannelsManager->UpdateChannel($oChannel);
+				$bResult = $this->getChannelsManager()->UpdateChannel($oChannel);
 				if ($bResult)
 				{
-					$this->oApiPostsManager->CreateSystemPost('', \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList, $ChannelUUID);
+					$this->getPostsManager()->CreateSystemPost('', \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList, $ChannelUUID);
 				}
 			}
 		}
@@ -407,7 +425,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
 		{
-			$aChannelsUUIDs = $this->oApiChannelsManager->GetUserChannels($oUser->UUID);
+			$aChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 			if (in_array($ChannelUUID, $aChannelsUUIDs))
 			{
 				$oUserForDeletion = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($UserPublicId);
@@ -415,9 +433,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 				{
 					//Create system message
 					$Text = $this->i18N('INFO_USER_LEFT_CHANNEL', ['USERNAME' => $oUserForDeletion->PublicId]);
-					$this->oApiPostsManager->CreateSystemPost($Text, \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList, $ChannelUUID);
+					$this->getPostsManager()->CreateSystemPost($Text, \Aurora\Modules\Chat\Enums\CommandCodes::UpdateChannelsList, $ChannelUUID);
 					usleep(500000);//wait while user get system message
-					$bResult = $this->oApiChannelsManager->DeleteUserFromChannel($oUserForDeletion->UUID, $ChannelUUID);
+					$bResult = $this->getChannelsManager()->DeleteUserFromChannel($oUserForDeletion->UUID, $ChannelUUID);
 				}
 			}
 		}

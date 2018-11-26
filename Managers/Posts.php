@@ -31,7 +31,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 	{
 		parent::__construct($oModule);
 		
-		$this->oEavManager = new \Aurora\System\Managers\Eav();
+		$this->oEavManager = \Aurora\System\Managers\Eav::getInstance();
 	}
 	
 	/**
@@ -146,7 +146,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 		if (is_string($ChannelUUID))
 		{
 			$iResult = (int) $this->oEavManager->getEntitiesCount(
-				\Aurora\Modules\Chat\Module::getNamespace() . '\Classes\Post',
+				\Aurora\Modules\Chat\Classes\Post::class,
 				[
 					'$AND' =>
 					[
