@@ -271,6 +271,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		$aUserChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
+		$aPosts = false;
 		if (is_array($aUserChannelsUUIDs) && !empty($aUserChannelsUUIDs))
 		{
 			$aPosts = $this->getPostsManager()->GetPosts(0, 0,
@@ -292,6 +293,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		$aUserChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
+		$aPosts = false;
 		if (is_array($aUserChannelsUUIDs) && !empty($aUserChannelsUUIDs))
 		{
 			$aPosts = $this->getPostsManager()->GetPosts(0, 0,
