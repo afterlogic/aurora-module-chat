@@ -155,7 +155,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::PermissionDenied);
 		}
 		$oDate = new \DateTime();
-		$oDate->setTimezone(new \DateTimeZone('UTC'));
 		$this->getPostsManager()->CreatePost($oUser->EntityId, $Text, $oDate->getTimestamp(), $ChannelUUID, /*$IsHtml*/false, $GUID);
 		return true;
 	}

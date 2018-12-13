@@ -89,12 +89,14 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 				}
 				if (isset($aUsers[$oItem->UserId]))
 				{
+					$oDate = new \DateTime("now", new \DateTimeZone('UTC'));
+					$oDate->setTimestamp($oItem->Timestamp);
 					$aResult[] = array(
 						'id'				=> $oItem->EntityId,
 						'userId'			=> $oItem->UserId,
 						'name'				=> $aUsers[$oItem->UserId],
 						'text'				=> $oItem->Text,
-						'date'				=> date('Y-m-d H:i:s', $oItem->Timestamp),	
+						'date'				=> $oDate->format('Y-m-d H:i:s'),	
 						'channelUUID'		=> $oItem->ChannelUUID,
 						'isHtml'			=> $oItem->IsHtml,
 						'GUID'				=> $oItem->GUID,
