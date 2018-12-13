@@ -22,11 +22,45 @@
 				border-radius: 5px;
 				display: inline-block;
 				min-width: 300px;
+				max-width: 92%;
+				word-wrap: break-word;
 			}
 			.text.own-post-text {
 				background-color: #adf0f3;
 			}
+			.resend {
+				cursor: pointer;
+
+				.icon {
+					display: inline-block;
+					font-size: 24px;
+					height: 24px;
+					width: 24px;
+					text-align: center;
+					vertical-align: middle;
+					font-style: normal;
+					font-weight: normal;
+					font-variant: normal;
+					text-transform: none;
+					line-height: 1;
+					font-family: 'afterlogic';
+					text-shadow: none;
+				}
+
+				.icon::before {
+					content: "\e607";
+					height: 100%;
+					width: 100%;
+					color: #f48585;
+					text-shadow: none;
+				}
+			}
+
+			.resend.process .icon:before {
+				.animation(cycle 0.8s linear infinite);
+			}
 		}
+
 		.own-post {
 			float: right;
 		}

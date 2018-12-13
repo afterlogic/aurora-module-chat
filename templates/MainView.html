@@ -31,7 +31,15 @@
 											'mouseover': $parent.showMessageDate,
 											'mouseout': $parent.hideMessageDate
 										}"
-									></div>
+										>
+									</div>
+									<span class="resend"
+										data-bind="visible: isOwn && notSend(),
+										command: $parent.resendCommand,
+										css: {'process': resendIndicator},
+										customTooltip: 'click to resend' ">
+										<span class="icon"></span>
+									</span>
 								</div>
 								<!-- /ko -->
 							</div>

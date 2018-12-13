@@ -97,6 +97,9 @@ function CChatView()
 		return [];
 	}, this);
 	this.deleteTitle = TextUtils.i18n('COREWEBCLIENT/ACTION_DELETE_ADDRESS');
+	this.resendCommand = Utils.createCommand(this, function (oPost) {
+		this.resendPost(oPost);
+	});
 }
 
 _.extendOwn(CChatView.prototype, CAbstractScreenView.prototype);
@@ -212,6 +215,8 @@ CChatView.prototype.addPost = function (oPost, bEnd, bOwn)
 	oPost.isOwn = bOwn;
 	oPost.hideHeader = ko.observable(false);
 	oPost.hideMessageDate = ko.observable(true);
+	oPost.notSend = ko.observable(false);
+	oPost.resendIndicator = ko.observable(false);
 
 	if (oPost.displayText() !== '')
 	{
@@ -332,8 +337,22 @@ CChatView.prototype.sendPost = function ()
 	{
 		var
 			sDate = moment().utc().format('YYYY-MM-DD HH:mm:ss'),
-			GUID = this.guid()
+			GUID = this.guid(),
+			oPost = {
+				userId: App.getUserId(),
+				name: App.getUserPublicId(),
+				text: this.replyText(),
+				date: sDate,
+				recent: true,
+				channelUUID: this.selectedChannel().UUID,
+				GUID: GUID
+			}
 		;
+		this.addPost(
+			oPost,
+			true,
+			true
+		);
 		Ajax.send(
 			'CreatePost',
 			{
@@ -346,25 +365,44 @@ CChatView.prototype.sendPost = function ()
 				if (oResponse && !oResponse.Result)
 				{
 					Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_POST_CREATING'));
+					this.markPostAsNotSend(oPost.channelUUID, oPost.GUID);
 				}
 			},
 			this
 		);
-		this.addPost({
-				userId: App.getUserId(),
-				name: App.getUserPublicId(),
-				text: this.replyText(),
-				date: sDate,
-				recent: true,
-				channelUUID: this.selectedChannel().UUID,
-				GUID: GUID
-			},
-			true,
-			true
-		);
 		this.replyText('');
 	}
 	return false;
+};
+
+CChatView.prototype.resendPost = function (oPost)
+{
+	var
+		GUID = this.guid(),
+		oChannel = this.getChannelByUUID(oPost.channelUUID)
+	;
+	oPost.resendIndicator(true);
+	Ajax.send(
+		'CreatePost',
+		{
+			'Text': oPost.text,
+			'ChannelUUID': oPost.channelUUID,
+			'GUID': GUID
+		},
+		function (oResponse)
+		{
+			if (oResponse && !oResponse.Result)
+			{
+				Screens.showError(TextUtils.i18n('%MODULENAME%/ERROR_POST_CREATING'));
+				oPost.resendIndicator(false);
+			}
+			else
+			{
+				oChannel.PostsCollection.remove(oPost);
+			}
+		},
+		this
+	);
 };
 
 CChatView.prototype.onGetLastPostsResponse = function (oResponse, oRequest)
@@ -657,7 +695,7 @@ CChatView.prototype.getSystemPostMessage = function (oPost)
 	}
 	if (oPostData && oPostData.Text)
 	{
-		sMessage = oPostData.Text
+		sMessage = oPostData.Text;
 	}
 	
 	return sMessage;
@@ -694,6 +732,18 @@ CChatView.prototype.updateUserListInCurrentChannel = function ()
 		}, this),
 		this
 	);
+};
+
+CChatView.prototype.markPostAsNotSend = function (channelUUID, GUID)
+{
+	var
+		oCahnnel = this.getChannelByUUID(channelUUID),
+		oPost = _.find(oCahnnel.PostsCollection(), function(oPost){
+			return oPost.GUID === GUID; 
+		})
+	;
+
+	oPost.notSend(true);
 };
 
 CChatView.prototype.guid = function ()
