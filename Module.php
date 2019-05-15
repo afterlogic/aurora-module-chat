@@ -66,7 +66,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function GetSettings()
 	{
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oUser) && $oUser->isNormalOrTenant())
 		{
 			return array(
 				'EnableModule' => $oUser->{self::GetName().'::EnableModule'}
@@ -164,7 +164,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$mResult = false;
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 		$oCoreDecorator = \Aurora\System\Api::GetModuleDecorator('Core');
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oUser) && $oUser->isNormalOrTenant())
 		{
 			$iEndTime = time() + 29;
 			$oNow = new \DateTime("-1 seconds");
@@ -218,7 +218,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$bResult = false;
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oUser) && $oUser->isNormalOrTenant())
 		{
 			$aUnseenPosts = $this->getPostsByTimestamp($oUser->{self::GetName() . '::LastShowPostsTimestamp'});
 			if (is_array($aUnseenPosts) && count($aUnseenPosts) > 0)
@@ -233,7 +233,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$bResult = false;
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oUser) && $oUser->isNormalOrTenant())
 		{
 			$oChannel = new \Aurora\Modules\Chat\Classes\Channel(self::GetName());
 			$oChannel->Name = $Name;
@@ -254,7 +254,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$aResult = [];
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oUser) && $oUser->isNormalOrTenant())
 		{
 			$aChannelUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 			$aResult = $this->getChannelsManager()->GetChannels(0, 0,
@@ -310,7 +310,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$aResult = [];
 		$oAuthenticatedUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oAuthenticatedUser) && $oAuthenticatedUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oAuthenticatedUser) && $oAuthenticatedUser->isNormalOrTenant())
 		{
 			$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
 			$aChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oAuthenticatedUser->UUID);
@@ -402,7 +402,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$bResult = false;
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oUser) && $oUser->isNormalOrTenant())
 		{
 			$aChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 			if (in_array($ChannelUUID, $aChannelsUUIDs))
@@ -424,7 +424,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$bResult = false;
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if (!empty($oUser) && $oUser->Role === \Aurora\System\Enums\UserRole::NormalUser)
+		if (!empty($oUser) && $oUser->isNormalOrTenant())
 		{
 			$aChannelsUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 			if (in_array($ChannelUUID, $aChannelsUUIDs))

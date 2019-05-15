@@ -5,7 +5,7 @@ module.exports = function (oAppData) {
 	
 	require('modules/%ModuleName%/js/enums.js');
 
-	if (App.getUserRole() === Enums.UserRole.NormalUser || App.getUserRole() === Enums.UserRole.Customer)
+	if (App.isUserNormalOrTenant())
 	{
 		var
 			TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
