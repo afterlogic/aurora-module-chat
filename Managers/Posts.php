@@ -56,7 +56,6 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 
 		if (is_array($aResults))
 		{
-			$oCoreDecorator = \Aurora\Modules\Core\Module::Decorator();
 			if (count($aResults) > 1)
 			{
 				//sort result by EntityId
@@ -73,7 +72,7 @@ class Posts extends \Aurora\System\Managers\AbstractManager
 			{
 				if (!isset($aUsers[$oItem->UserId]))
 				{
-					$oUser = $oCoreDecorator->GetUser($oItem->UserId);
+					$oUser = \Aurora\Modules\Core\Module::Decorator()->GetUserUnchecked($oItem->UserId);
 					if ($oUser)
 					{
 						$aUsers[$oItem->UserId] = $oUser->PublicId;
