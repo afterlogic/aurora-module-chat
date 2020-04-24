@@ -210,7 +210,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		if (is_array($aChannelUsers) && !empty($aChannelUsers))
 		{
 			$oChannelUser = $aChannelUsers[0];
-			$bResult = $this->oEavManager->deleteEntity($oChannelUser->EntityId);
+			$bResult = $this->oEavManager->deleteEntity($oChannelUser->EntityId, \Aurora\Modules\Chat\Classes\ChannelUser::class);
 		}
 
 		return $bResult;
