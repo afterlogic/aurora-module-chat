@@ -28,7 +28,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		return $this->oPostsManager;
 	}
-	
+
 	public function getChannelsManager()
 	{
 		if ($this->oChannelsManager === null)
@@ -37,30 +37,20 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 
 		return $this->oChannelsManager;
-	}	
+	}
 
-	public function init() 
+	public function init()
 	{
 		$this->aErrors = [
 			Enums\ErrorCodes::UserNotFound	=> $this->i18N('ERROR_USER_NOT_FOUND'),
 			Enums\ErrorCodes::ChannelUserAlreadyInChannel	=> $this->i18N('ERROR_USER_ALREADY_IN_CHANNEL'),
 			Enums\ErrorCodes::PermissionDenied	=> $this->i18N('ERROR_PERMISSION_DENIED')
 		];
-
-		\Aurora\Modules\Core\Classes\User::extend(
-			self::GetName(),
-			[
-				'EnableModule'				=> ['bool', true],
-				'LastShowPostsTimestamp'	=> ['int', 0], //used to check if user have unseen posts
-				'LastRespondedPostId'		=> ['int', 0]  //used to find posts that were created after the last request GetLastPosts
-			]
-
-		);
 	}
 
 	/**
 	 * Obtains list of module settings for authenticated user.
-	 * 
+	 *
 	 * @return array
 	 */
 	public function GetSettings()
@@ -78,19 +68,19 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	/**
 	 * Updates settings of the Chat Module.
-	 * 
+	 *
 	 * @param boolean $EnableModule indicates if user turned on Chat Module.
 	 * @return boolean
 	 */
 	public function UpdateSettings($EnableModule)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-		
+
 		$iUserId = \Aurora\System\Api::getAuthenticatedUserId();
 		if (0 < $iUserId)
 		{
 			$oUser = \Aurora\Modules\Core\Module::Decorator()->GetUserUnchecked($iUserId);
-			$oUser->{self::GetName().'::EnableModule'} = $EnableModule;
+			$oUser->setExtendedProp(self::GetName().'::EnableModule', $EnableModule);
 			\Aurora\Modules\Core\Module::Decorator()->UpdateUserObject($oUser);
 		}
 		return true;
@@ -98,7 +88,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	/**
 	 * Obtains posts of Chat Module.
-	 * 
+	 *
 	 * @param int $Offset uses for obtaining a partial list.
 	 * @param int $Limit uses for obtaining a partial list.
 	 * @return array
@@ -138,7 +128,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	/**
 	 * Creates a new post for authenticated user.
-	 * 
+	 *
 	 * @param string $Text text of the new post.
 	 * @return boolean
 	 */
@@ -147,7 +137,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		
+
 		$aChannelUUIDs = $this->getChannelsManager()->GetUserChannels($oUser->UUID);
 		if (!in_array($ChannelUUID, $aChannelUUIDs))
 		{
@@ -171,7 +161,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$iCheckTime = $oNow->getTimestamp();
 			if ($IsUpdateLastShowPostsTimestamp || $oUser->{self::GetName() . '::LastShowPostsTimestamp'} === 0)
 			{
-				$oUser->{self::GetName() . '::LastShowPostsTimestamp'} = $iCheckTime;
+				$oUser->setExtendedProp(self::GetName() . '::LastShowPostsTimestamp', $iCheckTime);
 				if ($oCoreDecorator)
 				{
 					$oCoreDecorator->UpdateUserObject($oUser);
@@ -186,7 +176,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				{
 					if ($oCoreDecorator)
 					{
-						$oUser->{self::GetName() . '::LastRespondedPostId'} = $aPosts[count($aPosts) - 1]['id'];
+						$oUser->setExtendedProp(self::GetName() . '::LastRespondedPostId', $aPosts[count($aPosts) - 1]['id']);
 						$oCoreDecorator->UpdateUserObject($oUser);
 					}
 					$mResult = ['Collection' => $aPosts];
@@ -415,7 +405,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 			}
 		}
-		
+
 		return $bResult;
 	}
 
