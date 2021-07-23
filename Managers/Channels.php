@@ -161,7 +161,7 @@ class Channels extends \Aurora\System\Managers\AbstractManager
 		}
 		$aUserChannelsUUIDs = $this->GetUserChannels($UserUUID);
 		$oChannel = $this->GetChannelByIdOrUUID($mChannelIdOrUUID);
-		if (!$oChannel instanceof \Aurora\Modules\Chat\Classes\Channel)
+		if (!$oChannel instanceof \Aurora\Modules\Chat\Models\Channel)
 		{
 			throw new \Aurora\System\Exceptions\BaseException(\Aurora\Modules\Chat\Enums\ErrorCodes::Validation_InvalidParameters);
 		}
