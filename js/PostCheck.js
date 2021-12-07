@@ -16,11 +16,11 @@ var PostCheck = {
 	},
 	getLastPosts: function ()
 	{
-		Ajax.send('GetLastPosts', {}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
+		Ajax.send('GetLastPosts', {}, this.onGetLastPostsResponse, this);
 	},
 	getIsHaveUnseen: function ()
 	{
-		Ajax.send('IsHaveUnseen', {}, this.onGetIsHaveUnseenResponse, this, /*iTimeout*/30000);
+		Ajax.send('IsHaveUnseen', {}, this.onGetIsHaveUnseenResponse, this);
 	},
 	onGetLastPostsResponse: function (oResponse)
 	{

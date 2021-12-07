@@ -174,7 +174,7 @@ CChatView.prototype.showMore = function ()
 
 CChatView.prototype.getLastPosts = function ()
 {
-	Ajax.send('GetLastPosts', {'IsUpdateLastShowPostsTimestamp':HeaderItemView.isCurrent()}, this.onGetLastPostsResponse, this, /*iTimeout*/30000);
+	Ajax.send('GetLastPosts', {'IsUpdateLastShowPostsTimestamp':HeaderItemView.isCurrent()}, this.onGetLastPostsResponse, this);
 };
 
 CChatView.prototype.getPreviousPosts = function ()

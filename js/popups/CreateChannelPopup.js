@@ -185,7 +185,6 @@ CCreateChannelPopup.prototype.autocompleteCallback = function (oTerm, fResponse)
 
 		},
 		this,
-		undefined,
 		'Contacts'
 	);
 };

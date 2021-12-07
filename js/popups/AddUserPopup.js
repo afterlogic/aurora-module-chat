@@ -130,7 +130,6 @@ CAddUserPopup.prototype.autocompleteCallback = function (oTerm, fResponse)
 			fResponse(aList);
 		},
 		this,
-		undefined,
 		'Contacts'
 	);
 };
